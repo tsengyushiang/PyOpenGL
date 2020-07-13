@@ -3,11 +3,14 @@ from OpenGL.GL import *
 from OpenGL.GLU import *
 from OpenGL.GLUT import *
 
-from OpenGL.arrays import vbo
 from OpenGL.GL import shaders
 import shaders.basic as myShader
 
-import numpy as np
+from MyTriMesh import *
+
+from args import build_argparser
+args = build_argparser().parse_args()
+
 
 class OpenGLWindow:
     def __init__(self, width=640, height=480, title=b'PyOpenGL'):
@@ -22,22 +25,11 @@ class OpenGLWindow:
     def Draw(self):
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
         glLoadIdentity()
-        glTranslatef(0.0, 0.0, -1.0)
-        glColor3f(0.0, 1.0, 0.0)
-        glRasterPos2f(0.0, 0.0)
-        self.DrawText('PyOpenGL')
+        glTranslatef(0.0, 0.0, -3.0)
 
         # use shader and bind vbo
         shaders.glUseProgram(self.shader)
-        self.vbo.bind()
-        glEnableClientState(GL_VERTEX_ARRAY)
-
-        #draw setting
-        glVertexPointerf(self.vbo)
-        glDrawArrays(GL_TRIANGLES, 0, 9)
-
-        self.vbo.unbind()
-        glDisableClientState(GL_VERTEX_ARRAY)
+        self.mesh.Draw()
         shaders.glUseProgram(0)
 
         glutSwapBuffers()
@@ -54,7 +46,7 @@ class OpenGLWindow:
         glShadeModel(GL_SMOOTH)
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
-        gluPerspective(45.0, float(width)/float(height), 0.1, 100.0)
+        gluPerspective(60.0, float(width)/float(height), 0.01, 100.0)
         glMatrixMode(GL_MODELVIEW)
 
         # init shader
@@ -64,20 +56,8 @@ class OpenGLWindow:
             myShader.fragment_shader, GL_FRAGMENT_SHADER)
         self.shader = shaders.compileProgram(VERTEX_SHADER, FRAGMENT_SHADER)
 
-        # create vertices
-        self.vbo = vbo.VBO(
-            np.array([
-                [0, 1, 0],
-                [-1, -1, 0],
-                [1, -1, 0],
-                [2, -1, 0],
-                [4, -1, 0],
-                [4, 1, 0],
-                [2, -1, 0],
-                [4, 1, 0],
-                [2, 1, 0],
-            ], 'f')
-        )
+        # read obj file
+        self.mesh = MyTriMesh(args.model)
 
     def MainLoop(self):
         glutMainLoop()

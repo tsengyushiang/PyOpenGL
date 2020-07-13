@@ -6,6 +6,6 @@ def build_argparser():
    args.add_argument('-h', '--help', action='help',default='SUPPRESS') 
 
    # custom command line input parameters       
-   args.add_argument("-t", "--time", type=int,default=False)
+   args.add_argument("-model", "--model", type=str,default='./medias/sample.obj')
    
    return parser
