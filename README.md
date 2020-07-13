@@ -1,4 +1,7 @@
-## PyOpenGL + OpenMesh
+# Prerequisite
+
+- [CMake](https://cmake.org/download/)
+- [Visual Studio](https://visualstudio.microsoft.com/zh-hant/https://visualstudio.microsoft.com/zh-hant/)(使用 C++ 的桌面開發 )
 
 # Quick Start
 
@@ -9,7 +12,9 @@
     - `conda activate PyOpenGL`
     - `pip install PyOpenGL_accelerate-3.1.5-cp38-cp38-win_amd64.whl`
         
+        - 若已安裝需先移除`pip uninstall PyOpenGL_accelerate`
         - 解決`AttributeError: module 'numpy' has no attribute 'float128'`錯誤
+        - 解決`Unable to load numpy_formathandler accelerator from OpenGL_accelerate`錯誤
         - 不同版本(`cp38`表示python3.8)可到[此處下載](https://www.lfd.uci.edu/~gohlke/pythonlibs/)
 
 - 執行指令 :
