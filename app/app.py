@@ -6,7 +6,8 @@ from OpenGL.GLUT import *
 from OpenGL.GL import shaders
 import shaders.basic as myShader
 
-from MyTriMesh import *
+from Geometry import *
+from Algorithm.coordinate import Spherical2Cartesian
 
 from args import build_argparser
 args = build_argparser().parse_args()
@@ -23,20 +24,29 @@ class OpenGLWindow:
         self.InitGL(width, height)
 
     def Draw(self):
+
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
         glLoadIdentity()
-        glTranslatef(0.0, 0.0, -2.0)
+
+        coord = Spherical2Cartesian((3, self.v, 1))
+        gluLookAt(coord[0], coord[2], coord[1],  0.0,0.0,0.0,  0.0,1.0,0.0)
 
         # use shader and bind vbo
         shaders.glUseProgram(self.shader)
         self.mesh.Draw()
         shaders.glUseProgram(0)
 
+        
+        self.v += 0.5
+        '''
+        if self.v > 360:
+            self.v = 0
+            self.h += 5
+        '''
         glutSwapBuffers()
 
-    def DrawText(self, string):
-        for c in string:
-            glutBitmapCharacter(GLUT_BITMAP_8_BY_13, ord(c))
+        # refresh as fast as possible
+        glutPostRedisplay()
 
     def InitGL(self, width, height):
         glClearColor(0.0, 0.0, 0.0, 0.0)
@@ -57,7 +67,10 @@ class OpenGLWindow:
         self.shader = shaders.compileProgram(VERTEX_SHADER, FRAGMENT_SHADER)
 
         # read obj file
-        self.mesh = MyTriMesh(args.model)
+        self.mesh = Geometry(args.model)
+
+        self.v = 0
+        self.h = 0
 
     def MainLoop(self):
         glutMainLoop()

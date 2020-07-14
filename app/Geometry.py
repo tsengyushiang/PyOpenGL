@@ -7,7 +7,7 @@ import numpy as np
 import struct
 
 
-class MyTriMesh:
+class Geometry:
     def __init__(self, filename):
 
         self.mesh = self.unpackObjFile(filename)
