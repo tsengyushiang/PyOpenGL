@@ -4,11 +4,13 @@ from OpenGL.GL import *
 from openmesh import *
 
 import numpy as np
+import struct
 
 
 class MyTriMesh:
     def __init__(self, filename):
-        self.mesh = read_trimesh(filename)
+
+        self.mesh = self.unpackObjFile(filename)
 
         self.vertices = np.array(
             self.mesh.points(), dtype='f')
@@ -20,20 +22,56 @@ class MyTriMesh:
             self.indices, target=GL_ELEMENT_ARRAY_BUFFER)
 
     def Draw(self):
-        self.indexPositions.bind()
+        
         self.vertexPositions.bind()
-
         glEnableClientState(GL_VERTEX_ARRAY)
-
-        # draw setting
         glVertexPointerf(self.vertexPositions)
+        self.vertexPositions.unbind()
+
+        self.vertices_colors.bind()
+        glEnableClientState(GL_COLOR_ARRAY)
+        glColorPointerf(self.vertices_colors)
+        self.vertices_colors.unbind()
+
+        self.indexPositions.bind()
         glDrawElements(GL_TRIANGLES, len(self.indices)*3, GL_UNSIGNED_INT,
                        None)  # This line does work too!
 
-        self.vertexPositions.unbind()
         self.indexPositions.unbind()
 
         glDisableClientState(GL_VERTEX_ARRAY)
+        glDisableClientState(GL_COLOR_ARRAY)
 
     def Save(self, filename):
         write_mesh(filename, self.mesh)
+
+    def unpackObjFile(self, filename):
+
+        mesh = TriMesh()
+
+        # Using readlines()
+        objfile = open(filename, 'r')
+        Lines = objfile.readlines()
+
+        # 初始的第一個為padding,因obj檔中的face_index從1開始
+        vertices_colors = [[0, 0, 0]]
+        vertex_handles = [[0, 0, 0]]
+        # Strips the newline character
+        for line in Lines:
+            contents = line.split()
+
+            if contents[0] == 'v':
+
+                vertex_handle = mesh.add_vertex(
+                    [float(contents[1]), float(contents[2]), float(contents[3])])
+                vertex_handles.append(vertex_handle)
+                vertices_colors.append(
+                    [float(contents[4]), float(contents[5]), float(contents[6])])
+
+            elif contents[0] == 'f':
+                mesh.add_face(vertex_handles[int(contents[1])], vertex_handles[int(
+                    contents[2])], vertex_handles[int(contents[3])])
+
+        self.vertices_colors = vbo.VBO(np.array(vertices_colors, dtype='f'))
+
+        return mesh

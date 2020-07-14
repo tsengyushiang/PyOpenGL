@@ -26,6 +26,7 @@
 
 - [Document](http://pyopengl.sourceforge.net/documentation/manual-3.0)
 - [Simple Tutorial](https://cg-dev.ltas.ulg.ac.be/svn/cadxfem/tomoprocess_deprecated/src/OpenMesh-3.3/Documentation/a00036.html#python_propman)
+- [Sample Code](https://python.hotexamples.com/examples/OpenGL/GL/glColorPointer/python-gl-glcolorpointer-method-examples.html)
 
 # Develop
 

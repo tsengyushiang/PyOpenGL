@@ -25,7 +25,7 @@ class OpenGLWindow:
     def Draw(self):
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
         glLoadIdentity()
-        glTranslatef(0.0, 0.0, -3.0)
+        glTranslatef(0.0, 0.0, -2.0)
 
         # use shader and bind vbo
         shaders.glUseProgram(self.shader)
