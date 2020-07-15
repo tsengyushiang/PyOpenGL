@@ -51,8 +51,8 @@ class Geometry:
         objfile = open(filename, 'r')
         Lines = objfile.readlines()
 
+        vertices_colors = []
         # 初始的第一個為padding,因obj檔中的face_index從1開始
-        vertices_colors = [[0, 0, 0]]
         vertex_handles = [[0, 0, 0]]
         # Strips the newline character
         for line in Lines:
