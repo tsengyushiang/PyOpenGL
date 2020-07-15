@@ -6,11 +6,11 @@ from OpenGL.GLUT import *
 from OpenGL.GL import shaders
 import shaders.basic as myShader
 
-from MyTriMesh import *
+from Geometry import *
+from Camera import *
 
 from args import build_argparser
 args = build_argparser().parse_args()
-
 
 class OpenGLWindow:
     def __init__(self, width=640, height=480, title=b'PyOpenGL'):
@@ -19,13 +19,21 @@ class OpenGLWindow:
         glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH)
         glutInitWindowSize(width, height)
         self.window = glutCreateWindow(title)
+        
+        # render function
         glutDisplayFunc(self.Draw)
+
+        # mouse event
+        glutMouseFunc(self.mouseClick)
+        glutMotionFunc(self.mouseMove)
+
+        # render setting
         self.InitGL(width, height)
 
     def Draw(self):
+
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-        glLoadIdentity()
-        glTranslatef(0.0, 0.0, -2.0)
+        self.camera.update()
 
         # use shader and bind vbo
         shaders.glUseProgram(self.shader)
@@ -34,9 +42,8 @@ class OpenGLWindow:
 
         glutSwapBuffers()
 
-    def DrawText(self, string):
-        for c in string:
-            glutBitmapCharacter(GLUT_BITMAP_8_BY_13, ord(c))
+        # refresh as fast as possible
+        glutPostRedisplay()
 
     def InitGL(self, width, height):
         glClearColor(0.0, 0.0, 0.0, 0.0)
@@ -44,10 +51,8 @@ class OpenGLWindow:
         glDepthFunc(GL_LESS)
         glEnable(GL_DEPTH_TEST)
         glShadeModel(GL_SMOOTH)
-        glMatrixMode(GL_PROJECTION)
-        glLoadIdentity()
-        gluPerspective(60.0, float(width)/float(height), 0.01, 100.0)
-        glMatrixMode(GL_MODELVIEW)
+
+        self.camera = Camera(width, height)
 
         # init shader
         VERTEX_SHADER = shaders.compileShader(
@@ -57,7 +62,13 @@ class OpenGLWindow:
         self.shader = shaders.compileProgram(VERTEX_SHADER, FRAGMENT_SHADER)
 
         # read obj file
-        self.mesh = MyTriMesh(args.model)
+        self.mesh = Geometry(args.model)
+
+    def mouseClick(self, button, state, x, y):
+        self.camera.handlMouseClick(button, state, x, y)
+
+    def mouseMove(self, x, y):
+        self.camera.handleMouseMove(x, y)
 
     def MainLoop(self):
         glutMainLoop()
