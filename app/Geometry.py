@@ -4,8 +4,6 @@ from OpenGL.GL import *
 from openmesh import *
 
 import numpy as np
-import struct
-
 
 class Geometry:
     def __init__(self, filename):
