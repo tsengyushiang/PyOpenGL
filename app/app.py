@@ -4,10 +4,11 @@ from OpenGL.GLU import *
 from OpenGL.GLUT import *
 
 from OpenGL.GL import shaders
-import shaders.basic as myShader
+import shaders.texture2D as myShader
 
 from Geometry import *
 from Camera import *
+from Texture import *
 
 from args import build_argparser
 args = build_argparser().parse_args()
@@ -19,7 +20,7 @@ class OpenGLWindow:
         glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH)
         glutInitWindowSize(width, height)
         self.window = glutCreateWindow(title)
-        
+                        
         # render function
         glutDisplayFunc(self.Draw)
 
@@ -63,6 +64,10 @@ class OpenGLWindow:
 
         # read obj file
         self.mesh = Geometry(args.model)
+
+        # read texture
+        self.texture = Texture(args.texture)
+
 
     def mouseClick(self, button, state, x, y):
         self.camera.handlMouseClick(button, state, x, y)

@@ -7,5 +7,6 @@ def build_argparser():
 
    # custom command line input parameters       
    args.add_argument("-model", "--model", type=str,default='./medias/sample.obj')
-   
+   args.add_argument("-texture", "--texture", type=str,default='./medias/sample.png')
+
    return parser
