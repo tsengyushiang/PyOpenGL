@@ -15,6 +15,7 @@ class Texture:
         except ImportError:
             from Image import open
         im = open(imageName)
+        im = im.convert("RGBA")
         try:
             ix, iy, image = im.size[0], im.size[1], im.tobytes(
                 "raw", "RGBA", 0, -1)
