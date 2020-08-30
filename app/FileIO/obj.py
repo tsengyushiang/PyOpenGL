@@ -43,6 +43,7 @@ def save(objPath, mtlPath, Material, vertices, uvs, normals, faces):
 
     for f in faces:
         outF.write(
-            "f {0}/{0} {1}/{1} {2}/{2}\n".format(int(f[0]), int(f[1]), int(f[2])))
+            "f {0}/{1} {2}/{3} {4}/{5}\n".format(
+                int(f[0][0]), int(f[0][1]), int(f[1][0]), int(f[1][1]), int(f[2][0]), int(f[2][1])))
 
     outF.close()
