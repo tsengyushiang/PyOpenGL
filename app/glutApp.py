@@ -68,10 +68,10 @@ class OpenGLWindow:
         self.texture = Texture(args.texture)
 
     def mouseClick(self, button, state, x, y):
-        self.camera.handlMouseClick(button, state, x, y)
+        self.camera.handlGLUTMouseClick(button, state, x, y)
 
     def mouseMove(self, x, y):
-        self.camera.handleMouseMove(x, y)
+        self.camera.handleGLUTMouseMove(x, y)
 
     def MainLoop(self):
         glutMainLoop()

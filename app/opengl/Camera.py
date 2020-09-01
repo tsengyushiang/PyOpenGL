@@ -4,13 +4,16 @@ from OpenGL.GLUT import *
 
 from Algorithm.coordinate import Spherical2Cartesian
 
-from math import *
+import math
 
 
 class Camera:
     def __init__(self, width, height):
+        self.setViewport(width, height)
+
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
+
         gluPerspective(60.0, float(width)/float(height), 0.01, 100.0)
 
         self.minAzimuthangle = 0
@@ -25,6 +28,9 @@ class Camera:
 
         self.mouseCoord = None
 
+    def setViewport(self, width, height):
+        glViewport(0, 0, width, height)
+
     def update(self):
 
         glMatrixMode(GL_MODELVIEW)
@@ -34,7 +40,7 @@ class Camera:
         gluLookAt(coord[0], coord[2], coord[1],  self.center[0],
                   self.center[1], self.center[2],  0.0, 1.0, 0.0)
 
-    def handlMouseClick(self, button, state, x, y):
+    def handlGLUTMouseClick(self, button, state, x, y):
         #print(button, state, x, y)
         if(button == GLUT_LEFT_BUTTON):
             if(self.mouseCoord == None):
@@ -43,21 +49,27 @@ class Camera:
                 self.mouseCoord = None
 
         if(button == 3):
-            self.radius -= self.zoomSensitivity
+            self.zoom(-1)
 
         if(button == 4):
-            self.radius += self.zoomSensitivity
+            self.zoom(1)
 
-    def handleMouseMove(self, x, y):
+    def handleGLUTMouseMove(self, x, y):
         #print(x, y, self.mouseCoord)
         if(self.mouseCoord != None):
 
             deltaX = x-self.mouseCoord[0]
             deltaY = self.mouseCoord[1]-y
 
-            self.polarAngle += deltaX
-
-            if(self.azimuthangle+deltaY > self.minAzimuthangle and self.azimuthangle+deltaY < self.maxAzimuthangle):
-                self.azimuthangle += deltaY
+            self.dragCamera(deltaX, deltaY)
 
             self.mouseCoord = (x, y)
+    
+    def zoom(self, deltaZoom):
+        self.radius += self.zoomSensitivity * math.copysign(1, deltaZoom)
+
+    def dragCamera(self, deltaX, deltaY):
+        self.polarAngle += deltaX
+
+        if(self.azimuthangle+deltaY > self.minAzimuthangle and self.azimuthangle+deltaY < self.maxAzimuthangle):
+            self.azimuthangle += deltaY
