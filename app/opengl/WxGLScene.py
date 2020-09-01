@@ -98,6 +98,9 @@ class WxGLScene(glcanvas.GLCanvas):
             self.camera.dragCamera(dx, -dy)
             self.Refresh(False)
 
+    def activate(self):
+        self.SetCurrent(self.context)
+
     def onMouseWheel(self, evt):
         """ 響應鼠標滾輪事件 """
         self.camera.zoom(evt.WheelRotation)
