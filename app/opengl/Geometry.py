@@ -5,6 +5,7 @@ from openmesh import *
 
 import numpy as np
 
+
 class Geometry:
     def __init__(self, filename):
 
@@ -19,8 +20,9 @@ class Geometry:
         self.indexPositions = vbo.VBO(
             self.indices, target=GL_ELEMENT_ARRAY_BUFFER)
 
-    def Draw(self):
-        
+    def draw(self):
+
+        # bind vbo
         self.vertexPositions.bind()
         glEnableClientState(GL_VERTEX_ARRAY)
         glVertexPointerf(self.vertexPositions)

@@ -11,10 +11,10 @@ class WxGLScene(glcanvas.GLCanvas):
     def __init__(self, parent):
         """ 構造函數
 
-        parent      - 父級窗口對象  
-        eye         - 觀察者的位置（默認 z 軸的正方向）  
-        up          - 對觀察者而言的上方（默認 y 軸的正方向）  
-        view        - 視景體  
+        parent      - 父級窗口對象
+        eye         - 觀察者的位置（默認 z 軸的正方向）
+        up          - 對觀察者而言的上方（默認 y 軸的正方向）
+        view        - 視景體
         """
 
         glcanvas.GLCanvas.__init__(self, parent, -1, style=glcanvas.WX_GL_RGBA |
@@ -27,6 +27,7 @@ class WxGLScene(glcanvas.GLCanvas):
         self.mpos = None                                        # 鼠標位置
         self.initGL()                                           # 畫布初始化
         self.resize()
+        self.meshes = []
 
         # 綁定窗口尺寸改變事件
         self.parent.Bind(wx.EVT_SIZE, self.onResize)
@@ -94,7 +95,7 @@ class WxGLScene(glcanvas.GLCanvas):
             except:
                 return
             self.mpos = pos
-            self.camera.dragCamera(dx, dy)
+            self.camera.dragCamera(dx, -dy)
             self.Refresh(False)
 
     def onMouseWheel(self, evt):
@@ -127,6 +128,9 @@ class WxGLScene(glcanvas.GLCanvas):
 
         self.camera = Camera(self.size[0], self.size[1])
 
+    def add(self, mesh):
+        self.meshes.append(mesh)
+
     def drawGL(self):
         """ 繪製 """
 
@@ -135,47 +139,5 @@ class WxGLScene(glcanvas.GLCanvas):
 
         # 設置視口
         self.camera.update()
-
-        # ---------------------------------------------------------------
-        glBegin(GL_LINES)                    # 開始繪製線段（世界座標系）
-
-        # 以紅色繪製 x 軸
-        glColor4f(1.0, 0.0, 0.0, 1.0)        # 設置當前顏色爲紅色不透明
-        glVertex3f(-0.8, 0.0, 0.0)           # 設置 x 軸頂點（x 軸負方向）
-        glVertex3f(0.8, 0.0, 0.0)            # 設置 x 軸頂點（x 軸正方向）
-
-        # 以綠色繪製 y 軸
-        glColor4f(0.0, 1.0, 0.0, 1.0)        # 設置當前顏色爲綠色不透明
-        glVertex3f(0.0, -0.8, 0.0)           # 設置 y 軸頂點（y 軸負方向）
-        glVertex3f(0.0, 0.8, 0.0)            # 設置 y 軸頂點（y 軸正方向）
-
-        # 以藍色繪製 z 軸
-        glColor4f(0.0, 0.0, 1.0, 1.0)        # 設置當前顏色爲藍色不透明
-        glVertex3f(0.0, 0.0, -0.8)           # 設置 z 軸頂點（z 軸負方向）
-        glVertex3f(0.0, 0.0, 0.8)            # 設置 z 軸頂點（z 軸正方向）
-
-        glEnd()                              # 結束繪製線段
-
-        # ---------------------------------------------------------------
-        glBegin(GL_TRIANGLES)                # 開始繪製三角形（z 軸負半區）
-
-        glColor4f(1.0, 0.0, 0.0, 1.0)        # 設置當前顏色爲紅色不透明
-        glVertex3f(-0.5, -0.366, -0.5)       # 設置三角形頂點
-        glColor4f(0.0, 1.0, 0.0, 1.0)        # 設置當前顏色爲綠色不透明
-        glVertex3f(0.5, -0.366, -0.5)        # 設置三角形頂點
-        glColor4f(0.0, 0.0, 1.0, 1.0)        # 設置當前顏色爲藍色不透明
-        glVertex3f(0.0, 0.5, -0.5)           # 設置三角形頂點
-
-        glEnd()                              # 結束繪製三角形
-
-        # ---------------------------------------------------------------
-        glBegin(GL_TRIANGLES)                # 開始繪製三角形（z 軸正半區）
-
-        glColor4f(1.0, 0.0, 0.0, 1.0)        # 設置當前顏色爲紅色不透明
-        glVertex3f(-0.5, 0.5, 0.5)           # 設置三角形頂點
-        glColor4f(0.0, 1.0, 0.0, 1.0)        # 設置當前顏色爲綠色不透明
-        glVertex3f(0.5, 0.5, 0.5)            # 設置三角形頂點
-        glColor4f(0.0, 0.0, 1.0, 1.0)        # 設置當前顏色爲藍色不透明
-        glVertex3f(0.0, -0.366, 0.5)         # 設置三角形頂點
-
-        glEnd()                              # 結束繪製三角形
+        for mesh in self.meshes:
+            mesh.draw()
