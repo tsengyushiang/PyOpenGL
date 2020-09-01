@@ -6,11 +6,11 @@ from OpenGL.GLUT import *
 from OpenGL.GL import shaders
 import shaders.texture2D as myShader
 
-from Geometry import *
-from Camera import *
-from Texture import *
+from opengl.Geometry import *
+from opengl.Camera import *
+from opengl.Texture import *
 
-from args import build_argparser
+from Args.singleModelAndTexture import build_argparser
 args = build_argparser().parse_args()
 
 class OpenGLWindow:
@@ -20,7 +20,7 @@ class OpenGLWindow:
         glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH)
         glutInitWindowSize(width, height)
         self.window = glutCreateWindow(title)
-                        
+
         # render function
         glutDisplayFunc(self.Draw)
 
@@ -32,7 +32,6 @@ class OpenGLWindow:
         self.InitGL(width, height)
 
     def Draw(self):
-
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
         self.camera.update()
 
@@ -67,7 +66,6 @@ class OpenGLWindow:
 
         # read texture
         self.texture = Texture(args.texture)
-
 
     def mouseClick(self, button, state, x, y):
         self.camera.handlMouseClick(button, state, x, y)

@@ -22,6 +22,16 @@
     - 使用範例 : `python app/app.py` 
     - 顯示自己的model : `python app/app.py -model ./medias/box.obj`
 
+# GUI
+
+- [wxPython tutorial](https://www.yiibai.com/wxpython/wxpython_gui_builder_tools.html)
+- [wxFormBuilder](https://sourceforge.net/projects/wxformbuilder/)
+    - 設定`name`,`code_generation = python`
+    - 新增`component Palette/Forms/Frame`後可編輯物件
+    - 物件`name`會是之後程式中使用的`class`,`property`可直接做更改
+    - 儲存專案後按`F8`及會生成`.py`檔
+
+
 # PyOpenGL API 
 
 - [Document](http://pyopengl.sourceforge.net/documentation/manual-3.0)
