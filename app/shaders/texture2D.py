@@ -11,7 +11,7 @@ void main() {
 }
 '''
 fragment_shader =\
-    '''
+'''
 #version 120
 
 varying vec4 color;

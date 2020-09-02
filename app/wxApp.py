@@ -47,10 +47,9 @@ class mainApp(wx.App):
         geo = Geometry(args.model)
 
         mesh = Mesh(mat, geo)
-        mesh2 = Mesh(mat, geo)
-
+        
         self.scene.add(mesh)
-        self.scene2.add(mesh2)
+        self.scene2.add(mesh)
 
 
 if __name__ == "__main__":

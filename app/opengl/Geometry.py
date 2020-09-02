@@ -1,8 +1,6 @@
 from OpenGL.arrays import vbo
 from OpenGL.GL import *
-
 from openmesh import *
-
 import numpy as np
 
 
@@ -17,15 +15,17 @@ class Geometry:
             self.mesh.face_vertex_indices(), dtype=np.int32)
 
     def init(self):
+        
+        # store binding info in vao once, no need to bind in runtime.
+        self.vao = glGenVertexArrays(1)
+        glBindVertexArray(self.vao)
+
         self.vertexPositions = vbo.VBO(self.vertices)
         self.indexPositions = vbo.VBO(
             self.indices, target=GL_ELEMENT_ARRAY_BUFFER)
         self.verticesColors = vbo.VBO(
             np.array(self.vertices_colors, dtype='f'))
 
-    def draw(self):
-
-        # bind vbo
         self.vertexPositions.bind()
         glEnableClientState(GL_VERTEX_ARRAY)
         glVertexPointerf(self.vertexPositions)
@@ -37,13 +37,12 @@ class Geometry:
         self.verticesColors.unbind()
 
         self.indexPositions.bind()
+
+    def draw(self):
+
+        glBindVertexArray(self.vao)
         glDrawElements(GL_TRIANGLES, len(self.indices)*3, GL_UNSIGNED_INT,
                        None)  # This line does work too!
-
-        self.indexPositions.unbind()
-
-        glDisableClientState(GL_VERTEX_ARRAY)
-        glDisableClientState(GL_COLOR_ARRAY)
 
     def Save(self, filename):
         write_mesh(filename, self.mesh)
