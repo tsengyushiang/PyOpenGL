@@ -22,9 +22,17 @@ class Texture:
         except SystemError:
             ix, iy, image = im.size[0], im.size[1], im.tobytes(
                 "raw", "RGBX", 0, -1)
+
         # generate a texture ID
         self.id = glGenTextures(1)
+        self.image = image
+        self.ix = ix
+        self.iy = iy
+        print('texture success : '+imageName+' ,id : '+str(self.id))
+
+    def init(self):
         # make it current
+        glActiveTexture(GL_TEXTURE0+self.id)
         glBindTexture(GL_TEXTURE_2D, self.id)
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
@@ -32,7 +40,5 @@ class Texture:
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
         # copy the texture into the current texture ID
-        glTexImage2D(GL_TEXTURE_2D, 0, 3, ix, iy, 0,
-                     GL_RGBA, GL_UNSIGNED_BYTE, image)
-        print('load texture success : '+imageName, ix, iy)
-        # glGenerateMipmap(GL_TEXTURE_2D)
+        glTexImage2D(GL_TEXTURE_2D, 0, 3, self.ix, self.iy, 0,
+                     GL_RGBA, GL_UNSIGNED_BYTE, self.image)

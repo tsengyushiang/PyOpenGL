@@ -17,12 +17,13 @@ fragment_shader =\
 varying vec4 color;
 varying vec2 uv;
 uniform sampler2D tex;
+uniform sampler2D tex2;
 
 void main() {
     if(color.z>0.5){
         gl_FragColor = texture2D(tex,uv);
     }else{
-        gl_FragColor = color;
+        gl_FragColor = texture2D(tex2,uv);
     }
 }
 '''

@@ -16,9 +16,12 @@ class Geometry:
         self.indices = np.array(
             self.mesh.face_vertex_indices(), dtype=np.int32)
 
+    def init(self):
         self.vertexPositions = vbo.VBO(self.vertices)
         self.indexPositions = vbo.VBO(
             self.indices, target=GL_ELEMENT_ARRAY_BUFFER)
+        self.verticesColors = vbo.VBO(
+            np.array(self.vertices_colors, dtype='f'))
 
     def draw(self):
 
@@ -28,10 +31,10 @@ class Geometry:
         glVertexPointerf(self.vertexPositions)
         self.vertexPositions.unbind()
 
-        self.vertices_colors.bind()
+        self.verticesColors.bind()
         glEnableClientState(GL_COLOR_ARRAY)
-        glColorPointerf(self.vertices_colors)
-        self.vertices_colors.unbind()
+        glColorPointerf(self.verticesColors)
+        self.verticesColors.unbind()
 
         self.indexPositions.bind()
         glDrawElements(GL_TRIANGLES, len(self.indices)*3, GL_UNSIGNED_INT,
@@ -53,7 +56,7 @@ class Geometry:
         objfile = open(filename, 'r')
         Lines = objfile.readlines()
 
-        vertices_colors = []
+        self.vertices_colors = []
         # 初始的第一個為padding,因obj檔中的face_index從1開始
         vertex_handles = [[0, 0, 0]]
         # Strips the newline character
@@ -65,13 +68,11 @@ class Geometry:
                 vertex_handle = mesh.add_vertex(
                     [float(contents[1]), float(contents[2]), float(contents[3])])
                 vertex_handles.append(vertex_handle)
-                vertices_colors.append(
+                self.vertices_colors.append(
                     [float(contents[4]), float(contents[5]), float(contents[6])])
 
             elif contents[0] == 'f':
                 mesh.add_face(vertex_handles[int(contents[1])], vertex_handles[int(
                     contents[2])], vertex_handles[int(contents[3])])
-
-        self.vertices_colors = vbo.VBO(np.array(vertices_colors, dtype='f'))
 
         return mesh

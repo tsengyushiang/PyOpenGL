@@ -6,6 +6,7 @@ from opengl.Geometry import *
 from opengl.Texture import *
 from opengl.ShaderMaterial import *
 from opengl.Mesh import *
+from opengl.Uniform import *
 
 import shaders.texture2D as myShader
 
@@ -29,28 +30,24 @@ class mainApp(wx.App):
 
     def initObj(self):
 
+        # uniform
+        tex = Texture(args.texture)
+        tex2 = Texture('./medias/chess.png')
+
+        uniform = Uniform()
+        uniform.addTexture('tex', tex)
+        uniform.addTexture('tex2', tex2)
+
         # read shader
-        self.scene.activate()
         mat = ShaderMaterial(myShader.vertex_shader,
-                             myShader.fragment_shader)
-
-        # read texture
-        texture = Texture(args.texture)
-
-        self.scene2.activate()
-        mat2 = ShaderMaterial(myShader.vertex_shader,
-                              myShader.fragment_shader)
-
-        # read texture
-        texture2 = Texture(args.texture)
+                             myShader.fragment_shader,
+                             uniform)
 
         # read obj file
         geo = Geometry(args.model)
-        geo2 = Geometry(args.model)
-
 
         mesh = Mesh(mat, geo)
-        mesh2 = Mesh(mat2, geo2)
+        mesh2 = Mesh(mat, geo)
 
         self.scene.add(mesh)
         self.scene2.add(mesh2)
