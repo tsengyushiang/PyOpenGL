@@ -25,6 +25,7 @@ class GlutScene:
         self.meshes = []
 
     def add(self, mesh):
+        mesh.init()
         self.meshes.append(mesh)
 
     def draw(self):
