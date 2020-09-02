@@ -31,6 +31,10 @@
     - 物件`name`會是之後程式中使用的`class`,`property`可直接做更改
     - 儲存專案後按`F8`及會生成`.py`檔
 
+- [QtDesinger](https://build-system.fman.io/qt-designer-download)
+
+    - `pip install pyqt5-tools`
+    - `pyuic5 -x untitled.ui -o untitled.py`
 
 # PyOpenGL API 
 
