@@ -40,8 +40,7 @@ class Camera:
         gluLookAt(coord[0], coord[2], coord[1],  self.center[0],
                   self.center[1], self.center[2],  0.0, 1.0, 0.0)
 
-    def handlGLUTMouseClick(self, button, state, x, y):
-        #print(button, state, x, y)
+    def handlGLUTMouseClick(self, button, x, y):
         if(button == GLUT_LEFT_BUTTON):
             if(self.mouseCoord == None):
                 self.mouseCoord = (x, y)
@@ -64,7 +63,7 @@ class Camera:
             self.dragCamera(deltaX, deltaY)
 
             self.mouseCoord = (x, y)
-    
+
     def zoom(self, deltaZoom):
         self.radius += self.zoomSensitivity * math.copysign(1, deltaZoom)
 

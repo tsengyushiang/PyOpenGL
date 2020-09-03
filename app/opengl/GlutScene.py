@@ -5,6 +5,7 @@ from OpenGL.GLUT import *
 
 from opengl.Camera import *
 
+
 class GlutScene:
     def __init__(self, width=640, height=480, title=b'PyOpenGL'):
         # Initialization
@@ -49,7 +50,7 @@ class GlutScene:
         self.camera = Camera(width, height)
 
     def mouseClick(self, button, state, x, y):
-        self.camera.handlGLUTMouseClick(button, state, x, y)
+        self.camera.handlGLUTMouseClick(button,  x, y)
 
     def mouseMove(self, x, y):
         self.camera.handleGLUTMouseMove(x, y)
