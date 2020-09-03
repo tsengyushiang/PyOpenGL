@@ -11,7 +11,7 @@ void main() {
 }
 '''
 fragment_shader =\
-'''
+    '''
 #version 120
 
 varying vec4 color;
@@ -21,9 +21,9 @@ uniform sampler2D tex2;
 
 void main() {
     if(color.z>0.5){
-        gl_FragColor = texture2D(tex,uv);
+        gl_FragColor = texture2D(tex,uv)+vec4(1.0,1.0,0.0,1.0);
     }else{
-        gl_FragColor = texture2D(tex2,uv);
+        gl_FragColor = texture2D(tex2,uv)+vec4(1.0,0.0,0.0,1.0);
     }
 }
 '''
