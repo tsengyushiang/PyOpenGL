@@ -1,22 +1,14 @@
 import wx
 from wx import glcanvas
+
 from OpenGL.GL import *
 from OpenGL.GLU import *
-from .Camera import *
+
+from opengl.Camera import *
 
 
 class WxGLScene(glcanvas.GLCanvas):
-    """GL 場景類 """
-
     def __init__(self, parent):
-        """ 構造函數
-
-        parent      - 父級窗口對象
-        eye         - 觀察者的位置（默認 z 軸的正方向）
-        up          - 對觀察者而言的上方（默認 y 軸的正方向）
-        view        - 視景體
-        """
-
         glcanvas.GLCanvas.__init__(self, parent, -1, style=glcanvas.WX_GL_RGBA |
                                    glcanvas.WX_GL_DOUBLEBUFFER | glcanvas.WX_GL_DEPTH_SIZE)
 

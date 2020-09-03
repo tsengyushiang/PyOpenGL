@@ -1,9 +1,10 @@
 from OpenGL.GL import *
 from OpenGL.GLU import *
-from .Camera import *
 
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
+
+from opengl.Camera import *
 
 
 class QtGLScene():

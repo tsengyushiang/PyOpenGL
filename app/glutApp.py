@@ -1,7 +1,7 @@
-from opengl.GlutScene import *
-from opengl.Geometry import *
+from opengl.Scene.GlutScene import *
+from opengl.Geometry.ObjGeometry import *
+from opengl.Material.ShaderMaterial import *
 from opengl.Texture import *
-from opengl.ShaderMaterial import *
 from opengl.Mesh import *
 from opengl.Uniform import *
 
@@ -26,7 +26,7 @@ mat = ShaderMaterial(myShader.vertex_shader,
                      uniform)
 
 # read obj file
-geo = Geometry(args.model)
+geo = ObjGeometry(args.model)
 
 mesh = Mesh(mat, geo)
 

@@ -4,7 +4,7 @@ from openmesh import *
 import numpy as np
 
 
-class Geometry:
+class ObjGeometry:
     def __init__(self, filename):
 
         self.mesh = self.unpackObjFile(filename)
@@ -15,7 +15,7 @@ class Geometry:
             self.mesh.face_vertex_indices(), dtype=np.int32)
 
     def init(self):
-        
+
         # store binding info in vao once, no need to bind in runtime.
         self.vao = glGenVertexArrays(1)
         glBindVertexArray(self.vao)
