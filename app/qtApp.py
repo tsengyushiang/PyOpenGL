@@ -30,12 +30,12 @@ timer.timeout.connect(scene2.update)
 timer.start(1)
 
 # uniform
-#tex = Texture(args.texture)
-#tex2 = Texture('./medias/chess.png')
+tex = Texture(args.texture)
+tex2 = Texture('./medias/chess.png')
 
 uniform = Uniform()
-#uniform.addTexture('tex', tex)
-#uniform.addTexture('tex2', tex2)
+uniform.addTexture('tex', tex)
+uniform.addTexture('tex2', tex2)
 
 # read shader
 mat = ShaderMaterial(myShader.vertex_shader,

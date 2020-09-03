@@ -21,9 +21,9 @@ uniform sampler2D tex2;
 
 void main() {
     if(color.z>0.5){
-        gl_FragColor = texture2D(tex,uv)+vec4(1.0,1.0,0.0,1.0);
+        gl_FragColor = texture2D(tex,uv);
     }else{
-        gl_FragColor = texture2D(tex2,uv)+vec4(1.0,0.0,0.0,1.0);
+        gl_FragColor = texture2D(tex2,uv);
     }
 }
 '''

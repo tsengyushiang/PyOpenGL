@@ -3,6 +3,7 @@ from OpenGL.GLU import *
 from .Camera import *
 
 from PyQt5.QtCore import *
+from PyQt5.QtGui import *
 
 
 class QtGLScene():
@@ -18,6 +19,11 @@ class QtGLScene():
         self.openGLWidget.mousePressEvent = self.mousePressEvent
         self.openGLWidget.mouseReleaseEvent = self.mouseReleaseEvent
         self.openGLWidget.wheelEvent = self.wheelEvent
+
+        format = QSurfaceFormat()
+        format.defaultFormat()
+        format.setProfile(QSurfaceFormat.CoreProfile)
+        self.openGLWidget.setFormat(format)
 
         self.meshes = []
 
