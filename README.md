@@ -3,24 +3,32 @@
 - [CMake](https://cmake.org/download/)
 - [Visual Studio](https://visualstudio.microsoft.com/zh-hant/https://visualstudio.microsoft.com/zh-hant/)(使用 C++ 的桌面開發 )
 
-# Quick Start
+# Anaconda install instructions
 
-- 環境安裝 :  
-    
-    - `cd /dependencies`
-    - use anaconda : `conda env create -f environment.yaml`
-    - `conda activate PyOpenGL`
-    - `pip install PyOpenGL_accelerate-3.1.5-cp38-cp38-win_amd64.whl`
-        
-        - 若已安裝需先移除`pip uninstall PyOpenGL_accelerate`
-        - 解決`AttributeError: module 'numpy' has no attribute 'float128'`錯誤
-        - 解決`Unable to load numpy_formathandler accelerator from OpenGL_accelerate`錯誤
-        - 不同版本(`cp38`表示python3.8)可到[此處下載](https://www.lfd.uci.edu/~gohlke/pythonlibs/)
+- 安裝指令
 
-- 執行指令 :
+```
+conda create -n Pyopengl3.7 python=3.7
+conda activate Pyopengl3.7
+conda install -c anaconda numpy
+conda install -c conda-forge opencv
 
-    - 使用範例 : `python app/app.py` 
-    - 顯示自己的model : `python app/app.py -model ./medias/box.obj`
+pip install pyrealsense2
+pip install PyOpenGL PyOpenGL_accelerate
+pip install openmesh
+pip install pillow
+
+pip install PyQt5
+
+pip install wxPython
+```
+
+- 範例程式
+
+```
+python app/wxApp.py
+python app/qtApp.py
+```
 
 # GUI
 
@@ -35,6 +43,17 @@
 
     - `pip install pyqt5-tools`
     - `pyuic5 -x untitled.ui -o untitled.py`
+    - 讓 layout 依視窗大小縮放 : `Form/Layout in a Grid`
+    - 固定子元件在 layout 中 50%-50%:
+        
+        - code
+
+        ```
+        graphicsView->setSizePolicy( QSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored));
+        raphicsView2->setSizePolicy(QSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored));
+        ```
+        
+        - 或在QtDesigner將layout右鍵`morph into QWidget`再從屬性欄中調整
 
 # PyOpenGL API 
 
