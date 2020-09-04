@@ -10,12 +10,7 @@ import math
 class Camera:
     def __init__(self, width, height):
         self.setViewport(width, height)
-
-        glMatrixMode(GL_PROJECTION)
-        glLoadIdentity()
-
-        gluPerspective(60.0, float(width)/float(height), 0.01, 100.0)
-
+            
         self.minAzimuthangle = 0
         self.maxAzimuthangle = 180
         self.zoomSensitivity = 0.1
@@ -29,8 +24,12 @@ class Camera:
         self.mouseCoord = None
 
     def setViewport(self, width, height):
-        glViewport(0, 0, width, height)
+        glMatrixMode(GL_PROJECTION)
+        glLoadIdentity()
 
+        glViewport(0, 0, width, height)
+        gluPerspective(60.0, float(width)/float(height), 0.01, 100.0)
+        
     def update(self):
 
         glMatrixMode(GL_MODELVIEW)
