@@ -63,16 +63,12 @@ class QtGLScene():
         self.openGLWidget.doneCurrent()
 
     def paintGL(self):
-        self.openGLWidget.makeCurrent()
-
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
         # 設置視口
         self.camera.update()
         for mesh in self.meshes:
             mesh.draw()
-
-        self.openGLWidget.doneCurrent()
 
     def resizeGL(self, width, height):
         size = self.openGLWidget.size()
@@ -81,7 +77,11 @@ class QtGLScene():
         self.camera.setViewport(self.size[0], self.size[1])
 
     def update(self):
+        self.openGLWidget.makeCurrent()
         self.openGLWidget.update()
+
+    def updateDone(self):
+        self.openGLWidget.doneCurrent()
 
     def wheelEvent(self, evt):
         self.camera.zoom(evt.angleDelta().y())

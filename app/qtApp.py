@@ -1,3 +1,4 @@
+import cv2
 import sys
 from qtLayout.twoWindow import *
 from PyQt5.QtCore import *
@@ -9,7 +10,7 @@ from opengl.Texture import *
 from opengl.Mesh import *
 from opengl.Uniform import *
 
-import shaders.texture2D as myShader
+import shaders.cvTexture2D as myShader
 
 from Args.singleModelAndTexture import build_argparser
 args = build_argparser().parse_args()
@@ -29,12 +30,13 @@ timer.timeout.connect(scene2.update)
 timer.start(1)
 
 # uniform
-tex = Texture(args.texture)
+img = cv2.imread(args.texture)
+tex = Texture(img)
 tex2 = Texture('./medias/chess.png')
 
 uniform = Uniform()
-uniform.addTexture('tex', tex)
-uniform.addTexture('tex2', tex2)
+uniform.addTexture('texColor', tex)
+uniform.addTexture('texDepth', tex2)
 
 # read shader
 mat = ShaderMaterial(myShader.vertex_shader,

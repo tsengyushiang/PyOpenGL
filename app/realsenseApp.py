@@ -12,8 +12,9 @@ from opengl.Geometry.ObjGeometry import *
 from opengl.Material.ShaderMaterial import *
 from opengl.Mesh import *
 from opengl.Uniform import *
+from opengl.Texture import *
 
-import shaders.basic as myShader
+import shaders.cvTexture2D as myShader
 
 from Args.singleModelAndTexture import build_argparser
 args = build_argparser().parse_args()
@@ -26,6 +27,30 @@ ui.setupUi(MainWindow)
 
 # setup QtWidgets and openGL, opencv
 scene = QtGLScene(ui.openGLWidget)
+scene.update()
+
+imgs = []
+
+
+def addPointClouds(w, h):
+    texColor = Texture(np.full((w, h, 3), 0, dtype="uint8"))
+    texDepth = Texture(np.full((w, h, 3), 255, dtype="uint8"))
+    imgs.append([texColor, texDepth])
+
+    # add scene
+    uniform = Uniform()
+    uniform.addTexture('texColor', texColor)
+    uniform.addTexture('texDepth', texDepth)
+
+    mat = ShaderMaterial(myShader.vertex_shader,
+                         myShader.fragment_shader,
+                         uniform)
+
+    # read obj file
+    geo = ObjGeometry(args.model)
+    mesh = Mesh(mat, geo)
+    scene.add(mesh)
+
 
 imgBlocks = [
     [QtcvImage(ui.label00), QtcvImage(ui.label01)],
@@ -45,29 +70,22 @@ MainWindow.show()
 
 # render loop
 
-
 def mainLoop():
     scene.update()
-
     for index, device in enumerate(connected_devices):
         color_image, depth_colormap = device.getFrames()
         imgBlocks[index][0].setImage(color_image)
         imgBlocks[index][1].setImage(depth_colormap)
+        imgs[index][0].update(color_image)
+        imgs[index][1].update(depth_colormap)
+
+    scene.updateDone()
 
 
 timer = QTimer(MainWindow)
 timer.timeout.connect(mainLoop)
 timer.start(1)
 
-# add scene
-uniform = Uniform()
-mat = ShaderMaterial(myShader.vertex_shader,
-                     myShader.fragment_shader,
-                     uniform)
+addPointClouds(720, 1280)
 
-# read obj file
-geo = ObjGeometry(args.model)
-mesh = Mesh(mat, geo)
-scene.add(mesh)
-
-sys.exit(app.exec_())
+app.exec_()

@@ -19,15 +19,21 @@ def GetAllRealsenses():
 class Device:
     def __init__(self, serial_num):
         self.serial_num = serial_num
+        self.w = 1280
+        self.h = 720
         self.configPipeLine()
 
     def configPipeLine(self):
         self.pipeline = rs.pipeline()
         self.config = rs.config()
         self.config.enable_device(self.serial_num)
-        self.config.enable_stream(rs.stream.depth, 640, 480, rs.format.z16, 30)
         self.config.enable_stream(
-            rs.stream.color, 640, 480, rs.format.bgr8, 30)
+            rs.stream.depth, self.w, self.h, rs.format.z16, 30)
+        self.config.enable_stream(
+            rs.stream.color, self.w, self.h, rs.format.bgr8, 30)
+
+        align_to = rs.stream.color
+        self.align = rs.align(align_to)
 
     def start(self):
         self.pipeline.start(self.config)
@@ -37,19 +43,19 @@ class Device:
 
     def getFrames(self):
 
-        frame = self.pipeline.wait_for_frames()
-        depth_frame = frame.get_depth_frame()
-        color_frame = frame.get_color_frame()
+        frames = self.pipeline.wait_for_frames()
+        frames = self.align.process(frames)
+        depth_frame = frames.get_depth_frame()
+        color_frame = frames.get_color_frame()
 
         if not depth_frame or not color_frame:
             print(self.serial_num, 'retrieve frame error !!')
             return null, null
 
         self.color_image = np.asanyarray(color_frame.get_data())
-
-        depth_image = np.asanyarray(depth_frame.get_data())
-        self.depth_colormap = cv2.applyColorMap(cv2.convertScaleAbs(
-            depth_image, alpha=0.5), cv2.COLORMAP_JET)
+        colorizer = rs.colorizer()
+        self.depth_colormap = np.asanyarray(
+            colorizer.colorize(depth_frame).get_data())
 
         return self.color_image, self.depth_colormap
 
