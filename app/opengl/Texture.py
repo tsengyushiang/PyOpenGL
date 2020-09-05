@@ -33,8 +33,8 @@ class Texture:
             print('texture loaded : '+input)
         else:
             self.image = np.flipud(input)
-            self.ix = input.shape[0]
-            self.iy = input.shape[1]
+            self.ix = input.shape[1]
+            self.iy = input.shape[0]
             self.type = GL_BGR
 
     def init(self):
@@ -48,13 +48,13 @@ class Texture:
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
         # copy the texture into the current texture ID
-        glTexImage2D(GL_TEXTURE_2D, 0, 3, self.iy, self.ix, 0,
+        glTexImage2D(GL_TEXTURE_2D, 0, 3, self.ix, self.iy, 0,
                      self.type, GL_UNSIGNED_BYTE, self.image)
 
     def update(self, input):
         self.image = np.flipud(input)
-        self.ix = input.shape[0]
-        self.iy = input.shape[1]
+        self.ix = input.shape[1]
+        self.iy = input.shape[0]
         self.type = GL_BGR
         glDeleteTextures([self.id])
         self.init()
