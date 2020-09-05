@@ -9,24 +9,24 @@ uniform float ppy;
 uniform float h;
 uniform float w;
 
+uniform float maxdepth=100;
+uniform float mindepth=0;
+
 varying vec4 color;
 varying vec2 uv;
 
 void main() {
-
-    vec4 pos = vec4(
-        gl_Vertex.x*gl_Vertex.z,
-        gl_Vertex.y*gl_Vertex.z,
-        1.0*gl_Vertex.z,
-        1.0
-    );
-
-    gl_Position = gl_ModelViewProjectionMatrix * pos;
-    color = gl_Vertex;
+    
+    if(gl_Vertex.z>maxdepth){
+        gl_Position=vec4(0.0,0.0,0.0,1.0);
+    }else{
+        gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
+        color = gl_Vertex;
+    }
 
     uv = vec2(
-        (gl_Vertex.x*fx+ppx)/w,
-        (gl_Vertex.y*fy+ppy)/h
+        (gl_Vertex.x/gl_Vertex.z*fx+ppx)/w,
+        (gl_Vertex.y/gl_Vertex.z*fy+ppy)/h
     );
 }
 '''

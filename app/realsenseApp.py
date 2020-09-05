@@ -3,6 +3,8 @@ import cv2
 from qtLayout.fourRealsense import *
 from PyQt5.QtCore import *
 
+from Aruco.Aruco import Aruco
+
 from Realsense.device import *
 
 from opencv.QtcvImage import *
@@ -77,13 +79,18 @@ for device in connected_devices:
 
 MainWindow.show()
 
-# render loop
+aruco = Aruco()
+aruco.saveMarkers()
 
+# render loop
 
 def mainLoop():
     scene.update()
     for index, device in enumerate(connected_devices):
         color_image, depth_colormap, pointcloud = device.getFrames()
+
+        # Aruco test
+        aruco.findMarkers(color_image)
 
         # update qt image box
         imgBlocks[index][0].setImage(color_image)
@@ -94,7 +101,7 @@ def mainLoop():
         imgsTextures[index][1].update(depth_colormap)
 
         # print(pointcloud)
-        pointCloudGeos[index].update(pointcloud)
+        pointCloudGeos[index].update(pointcloud)        
 
     scene.updateDone()
 
