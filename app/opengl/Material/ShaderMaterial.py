@@ -23,13 +23,7 @@ class ShaderMaterial():
         # use shader
         shaders.glUseProgram(self.shader)
 
-        for texture in self.uniform.textures:
-            location = glGetUniformLocation(self.shader, texture[0])
-            glUniform1i(location, texture[1].id)
-
-        for floatNum in self.uniform.floats:
-            location = glGetUniformLocation(self.shader, floatNum[0])
-            glUniform1f(location, floatNum[1])
+        self.uniform.update(self.shader)       
 
     def deactivate(self):
         shaders.glUseProgram(0)

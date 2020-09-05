@@ -52,6 +52,15 @@ class Device:
     def stop(self):
         self.pipeline.stop()
 
+    def pixel2point(self, coord):
+        x = int(coord[0])
+        y = int(self.h-coord[1]-1)
+        d = self.depthValues[y][x]
+
+        pointX = (x-self.intr.ppx)/self.intr.fx
+        pointY = (y-self.intr.ppy)/self.intr.fy
+        return [pointX*d, pointY*d, d]
+
     def getFrames(self):
 
         frames = self.pipeline.wait_for_frames()
@@ -70,13 +79,14 @@ class Device:
 
         # calc point cloud
         # ref : https://github.com/IntelRealSense/librealsense/blob/6ded42e4f1709acc60bdd42667028f221b9e6094/include/librealsense2/rsutil.h#L46
-        depthValues = np.asanyarray(depth_frame.get_data())*self.depth_scale
+        self.depthValues = np.asanyarray(
+            depth_frame.get_data())*self.depth_scale
         h = (np.arange(self.h, dtype=float)[::-1]-self.intr.ppy)/self.intr.fy
         w = (np.arange(self.w, dtype=float)-self.intr.ppx)/self.intr.fx
         self.points = np.empty((self.h, self.w, 3), dtype=float)
-        self.points[:, :, 1] = h[:, None]*depthValues
-        self.points[:, :, 0] = w*depthValues
-        self.points[:, :, 2] = depthValues
+        self.points[:, :, 1] = h[:, None]*self.depthValues
+        self.points[:, :, 0] = w*self.depthValues
+        self.points[:, :, 2] = self.depthValues
         self.points = self.points.reshape(self.h*self.w, 3)
 
         return self.color_image, self.depth_colormap, self.points

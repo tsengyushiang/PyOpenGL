@@ -8,6 +8,8 @@ class Uniform:
         self.dict = []
         self.textures = []
         self.floats = []
+        self.vec3s = []
+        self.mat4s = []
 
     def init(self):
         for texture in self.textures:
@@ -18,3 +20,39 @@ class Uniform:
 
     def addFloat(self, name, number):
         self.floats.append([name, number])
+
+    def addvec3(self, name, vec3):
+        self.vec3s.append([name, vec3])
+
+    def addMat4(self, name, mat4):
+        self.mat4s.append([name, mat4])
+
+    def setValue(self, name, value):
+        for texture in self.textures:
+            if(texture[0] == name):
+                texture[1] = value
+
+        for floatNum in self.floats:
+            if(floatNum[0] == name):
+                floatNum[1] = value
+
+        for vec3 in self.vec3s:
+            if(vec3[0] == name):
+                vec3[1] = value
+
+    def update(self, shader):
+        for texture in self.textures:
+            location = glGetUniformLocation(shader, texture[0])
+            glUniform1i(location, texture[1].id)
+
+        for floatNum in self.floats:
+            location = glGetUniformLocation(shader, floatNum[0])
+            glUniform1f(location, floatNum[1])
+
+        for vec3 in self.vec3s:
+            location = glGetUniformLocation(shader, vec3[0])
+            glUniform3f(location, vec3[1][0], vec3[1][1], vec3[1][2])
+
+        for mat4 in self.mat4s:
+            location = glGetUniformLocation(shader, mat4[0])
+            glUniformMatrix4fv(location, 1, GL_TRUE, mat4[1])

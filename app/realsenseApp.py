@@ -34,6 +34,7 @@ scene.update()
 
 imgsTextures = []
 pointCloudGeos = []
+uniforms = []
 
 
 def addPointClouds(w, h, intr):
@@ -51,6 +52,16 @@ def addPointClouds(w, h, intr):
     uniform.addFloat('ppy', intr.ppy)
     uniform.addFloat('w', w)
     uniform.addFloat('h', h)
+    uniform.addvec3('maker1', [0, 0, 0])
+    uniform.addvec3('maker2', [0, 0, 0])
+    uniform.addMat4('extrinct', [
+        [1.0, 0.0, 0.0, 0.0],
+        [0.0, 1.0, 0.0, 0.0],
+        [0.0, 0.0, 1.0, 0.0],
+        [0.0, 0.0, 0.0, 1.0]
+    ])
+
+    uniforms.append(uniform)
 
     mat = ShaderMaterial(myShader.vertex_shader,
                          myShader.fragment_shader,
@@ -80,9 +91,10 @@ for device in connected_devices:
 MainWindow.show()
 
 aruco = Aruco()
-aruco.saveMarkers()
+#aruco.saveMarkers()
 
 # render loop
+
 
 def mainLoop():
     scene.update()
@@ -90,7 +102,12 @@ def mainLoop():
         color_image, depth_colormap, pointcloud = device.getFrames()
 
         # Aruco test
-        aruco.findMarkers(color_image)
+        markerPixel1, markerPixel2 = aruco.findMarkers(color_image)
+        markerPoint1 = device.pixel2point(markerPixel1)
+        markerPoint2 = device.pixel2point(markerPixel2)
+
+        uniforms[index].setValue('maker1', markerPoint1)
+        uniforms[index].setValue('maker2', markerPoint2)
 
         # update qt image box
         imgBlocks[index][0].setImage(color_image)
@@ -101,7 +118,7 @@ def mainLoop():
         imgsTextures[index][1].update(depth_colormap)
 
         # print(pointcloud)
-        pointCloudGeos[index].update(pointcloud)        
+        pointCloudGeos[index].update(pointcloud)
 
     scene.updateDone()
 
