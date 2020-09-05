@@ -7,6 +7,7 @@ class Uniform:
         pass
         self.dict = []
         self.textures = []
+        self.floats = []
 
     def init(self):
         for texture in self.textures:
@@ -14,3 +15,6 @@ class Uniform:
 
     def addTexture(self, name, texture):
         self.textures.append([name, texture])
+
+    def addFloat(self, name, number):
+        self.floats.append([name, number])

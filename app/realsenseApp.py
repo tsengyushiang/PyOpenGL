@@ -34,7 +34,7 @@ imgsTextures = []
 pointCloudGeos = []
 
 
-def addPointClouds(w, h):
+def addPointClouds(w, h, intr):
     texColor = Texture(np.full((h, w, 3), 0, dtype="uint8"))
     texDepth = Texture(np.full((h, w, 3), 255, dtype="uint8"))
     imgsTextures.append([texColor, texDepth])
@@ -43,6 +43,12 @@ def addPointClouds(w, h):
     uniform = Uniform()
     uniform.addTexture('texColor', texColor)
     uniform.addTexture('texDepth', texDepth)
+    uniform.addFloat('fx', intr.fx)
+    uniform.addFloat('fy', intr.fy)
+    uniform.addFloat('ppx', intr.ppx)
+    uniform.addFloat('ppy', intr.ppy)
+    uniform.addFloat('w', w)
+    uniform.addFloat('h', h)
 
     mat = ShaderMaterial(myShader.vertex_shader,
                          myShader.fragment_shader,
@@ -98,8 +104,9 @@ timer.timeout.connect(mainLoop)
 timer.start(1)
 
 for device in connected_devices:
-    addPointClouds(device.w, device.h)
+    addPointClouds(device.w, device.h, device.intr)
 
-ui.statusbar.showMessage("Find {0} realsense(s).".format(len(connected_devices)))
+ui.statusbar.showMessage(
+    "Find {0} realsense(s).".format(len(connected_devices)))
 
 app.exec_()

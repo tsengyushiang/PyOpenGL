@@ -43,7 +43,7 @@ class Device:
         profile = cfg.get_stream(rs.stream.depth)
         self.intr = profile.as_video_stream_profile().get_intrinsics()
         print(self.intr.ppx, self.intr.ppy, self.intr.fx, self.intr.fy)
-        print(self.intr.coeffs)
+        #print(self.intr.coeffs)
 
         depth_sensor = cfg.get_device().first_depth_sensor()
         self.depth_scale = depth_sensor.get_depth_scale()
@@ -71,8 +71,8 @@ class Device:
         # calc point cloud
         # ref : https://github.com/IntelRealSense/librealsense/blob/6ded42e4f1709acc60bdd42667028f221b9e6094/include/librealsense2/rsutil.h#L46
         depthValues = np.asanyarray(depth_frame.get_data())*self.depth_scale
-        h = (np.arange(self.h, dtype=float)[::-1])/self.h
-        w = (np.arange(self.w, dtype=float))/self.w
+        h = (np.arange(self.h, dtype=float)[::-1]-self.intr.ppy)/self.intr.fy
+        w = (np.arange(self.w, dtype=float)-self.intr.ppx)/self.intr.fx
         self.points = np.empty((self.h, self.w, 3), dtype=float)
         self.points[:, :, 1] = h[:, None]
         self.points[:, :, 0] = w
