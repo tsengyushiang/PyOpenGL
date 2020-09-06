@@ -12,7 +12,7 @@ uniform float w;
 uniform float maxdepth=100;
 uniform float mindepth=0;
 
-uniform vec3 maker1;
+uniform vec3 offset;
 uniform mat4 extrinct;
 
 varying vec3 pos;
@@ -23,7 +23,7 @@ void main() {
     if(gl_Vertex.z>maxdepth){
         gl_Position=vec4(0.0,0.0,0.0,1.0);
     }else{
-        gl_Position = gl_ModelViewProjectionMatrix * extrinct * (gl_Vertex-vec4(maker1.xyz,0.0));
+        gl_Position = gl_ModelViewProjectionMatrix * extrinct * (gl_Vertex-vec4(offset.xyz,0.0));
     }
 
     pos = gl_Vertex.xyz;

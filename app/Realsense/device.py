@@ -47,19 +47,16 @@ class Device:
 
         depth_sensor = cfg.get_device().first_depth_sensor()
         self.depth_scale = depth_sensor.get_depth_scale()
-        #print("Depth Scale is: ", depth_scale)
+        # print("Depth Scale is: ", depth_scale)
 
     def stop(self):
         self.pipeline.stop()
 
     def pixel2point(self, coord):
-        x = int(coord[0])
-        y = int(self.h-coord[1]-1)
-        d = self.depthValues[y][x]
 
-        pointX = (x-self.intr.ppx)/self.intr.fx
-        pointY = (y-self.intr.ppy)/self.intr.fy
-        return np.array([pointX*d, pointY*d, d])
+        x = int(coord[0])
+        y = int(coord[1])
+        return self.points[y][x]
 
     def getFrames(self):
 
@@ -87,9 +84,8 @@ class Device:
         self.points[:, :, 1] = h[:, None]*self.depthValues
         self.points[:, :, 0] = w*self.depthValues
         self.points[:, :, 2] = self.depthValues
-        self.points = self.points.reshape(self.h*self.w, 3)
 
-        return self.color_image, self.depth_colormap, self.points
+        return self.color_image, self.depth_colormap, self.points.reshape(self.h*self.w, 3)
 
     def saveFrames(self, imgPath='img'):
         self.getFrames()

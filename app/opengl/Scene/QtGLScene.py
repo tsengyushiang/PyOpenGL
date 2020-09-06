@@ -65,6 +65,24 @@ class QtGLScene():
     def paintGL(self):
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
+        glBegin(GL_LINES)
+
+        # z-axis green
+        glColor3f(1.0, 0.0, 0.0)
+        glVertex3f(-0.1, 0.0, 0.0)
+        glVertex3f(0.0, 0.0, 0.0)
+
+        # y-axis green
+        glColor3f(0.0, 1.0, 0.0)
+        glVertex3f(0.0, 0.1, 0.0)
+        glVertex3f(0.0, 0.0, 0.0)
+
+        # x-axis green
+        glColor3f(0.0, 0.0, 1.0)
+        glVertex3f(0.0, 0.0, 0.1)
+        glVertex3f(0.0, 0.0, 0.0)
+        glEnd()
+
         # 設置視口
         self.camera.update()
         for mesh in self.meshes:

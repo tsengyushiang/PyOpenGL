@@ -53,7 +53,7 @@ def addPointClouds(w, h, intr):
     uniform.addFloat('ppy', intr.ppy)
     uniform.addFloat('w', w)
     uniform.addFloat('h', h)
-    uniform.addvec3('maker1', [0, 0, 0])
+    uniform.addvec3('offset', [0, 0, 0])
     uniform.addvec3('maker2', [0, 0, 0])
     uniform.addMat4('extrinct', [
         [1.0, 0.0, 0.0, 0.0],
@@ -124,9 +124,9 @@ def calibration(color_image, index):
     ])
 
     coordMarker = np.array([
-        [x[0], y[0], z[0], centerPoint[0]],
-        [x[1], y[1], z[1], centerPoint[1]],
-        [x[2], y[2], z[2], centerPoint[2]],
+        [x[0], -y[0], z[0], centerPoint[0]],
+        [x[1], -y[1], z[1], centerPoint[1]],
+        [x[2], -y[2], z[2], centerPoint[2]],
         [0, 0, 0, 1.0]
     ])
 
@@ -134,8 +134,13 @@ def calibration(color_image, index):
         inverCoordMarker = np.linalg.inv(coordMarker)
         uniforms[index].setValue('extrinct', inverCoordMarker)
     except:
+        uniforms[index].setValue('extrinct', np.array[
+            [1.0, 0.0, 0.0, 0.0],
+            [0.0, 1.0, 0.0, 0.0],
+            [0.0, 0.0, 1.0, 0.0],
+            [0.0, 0.0, 0.0, 1.0]
+        ])
         print("calibration error")
-
 
 def mainLoop():
     scene.update()
