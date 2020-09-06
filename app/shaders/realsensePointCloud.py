@@ -9,7 +9,6 @@ uniform float ppy;
 uniform float h;
 uniform float w;
 
-uniform vec3 offset;
 uniform mat4 extrinct;
 
 varying vec3 pos;
@@ -17,7 +16,7 @@ varying vec2 uv;
 
 void main() {
 
-    vec4 offsetPos = extrinct * (gl_Vertex-vec4(offset.xyz,0.0));
+    vec4 offsetPos = extrinct * gl_Vertex;
     gl_Position =  gl_ModelViewProjectionMatrix *offsetPos;
 
     pos = offsetPos.xyz;

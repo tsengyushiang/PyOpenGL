@@ -1,5 +1,8 @@
 import sys
 import cv2
+import datetime
+import os
+
 from qtLayout.fourRealsense import *
 from PyQt5.QtCore import *
 
@@ -18,6 +21,9 @@ from opengl.Mesh import *
 from opengl.Uniform import *
 from opengl.Texture import *
 import opengl.Helper as Glhelper
+
+import FileIO.ply as ply
+import FileIO.json as json
 
 import shaders.realsensePointCloud as myShader
 
@@ -56,15 +62,14 @@ def addPointClouds(w, h, intr):
     uniform.addFloat('ppy', intr.ppy)
     uniform.addFloat('w', w)
     uniform.addFloat('h', h)
-    uniform.addvec3('offset', [0, 0, 0])
     uniform.addvec3('bboxPos', pos)
     uniform.addvec3('bboxNeg', neg)
-    uniform.addMat4('extrinct', [
+    uniform.addMat4('extrinct', np.array([
         [1.0, 0.0, 0.0, 0.0],
         [0.0, 1.0, 0.0, 0.0],
         [0.0, 0.0, 1.0, 0.0],
         [0.0, 0.0, 0.0, 1.0]
-    ])
+    ]))
 
     uniforms.append(uniform)
 
@@ -115,13 +120,13 @@ def calibration(color_image, index):
                 [0.0, 0.0, 1.0, 0.0],
                 [0.0, 0.0, 0.0, 1.0]
         ]))
-        #print("calibration error")
+        # print("calibration error")
 
     if(num > 0):
-        markerPoint1 = device.pixel2point(corner1)
-        markerPointMiddle = device.pixel2point(middle)
-        markerPoint2 = device.pixel2point(corner2)
-        markerPointMiddle2 = device.pixel2point(middle2)
+        markerPoint1 = connected_devices[index].pixel2point(corner1)
+        markerPointMiddle = connected_devices[index].pixel2point(middle)
+        markerPoint2 = connected_devices[index].pixel2point(corner2)
+        markerPointMiddle2 = connected_devices[index].pixel2point(middle2)
 
         centerPoint = (markerPoint1+markerPointMiddle +
                        markerPoint2+markerPointMiddle2)/4
@@ -171,7 +176,59 @@ def customPaint():
     Glhelper.drawBbox(pos, neg)
     monitorScrollBar()
 
+
 scene.customRender.append(customPaint)
+
+
+def save():
+    currentTime = datetime.datetime.now()
+    currentTimeStr = currentTime.strftime("%Y%m%d_%H%M%S_%f")[:-3]
+    # print(currentTimeStr)
+    path = os.getcwd()
+    # print("The current working directory is %s" % path)
+    saveRootPath = os.path.join(path, currentTimeStr)
+    os.mkdir(saveRootPath)
+
+    for index, device in enumerate(connected_devices):
+        device.saveFrames(saveRootPath)
+        serial_num = device.serial_num
+
+        mat4 = uniforms[index].getValue('extrinct')
+
+        clipPoints = []
+        for points in device.points.reshape(device.h*device.w, 3):
+            vec = np.array([points[0], points[1], points[2], 1.0])
+            alignedVec = mat4.dot(vec)
+
+            if(pos[0] < alignedVec[0] or
+               pos[1] < alignedVec[1] or
+               pos[2] < alignedVec[2] or
+               neg[0] > alignedVec[0] or
+               neg[1] > alignedVec[1] or
+               neg[2] > alignedVec[2]):
+                continue
+
+            clipPoints.append((alignedVec[0], alignedVec[1], alignedVec[2]))
+
+        ply.save(clipPoints, os.path.join(saveRootPath,
+                                          serial_num+'.clipPointClouds'+'.ply'))
+
+        config = {
+            'intr': {
+                'fx': device.intr.fx,
+                'fy': device.intr.fy,
+                'ppx': device.intr.ppx,
+                'ppy': device.intr.ppy
+            },
+            'extr': mat4,
+        }
+
+        json.write(config, os.path.join(saveRootPath,
+                                        serial_num+'.config.json'))
+
+
+ui.pushButton.clicked.connect(save)
+
 
 def mainLoop():
     scene.update()
@@ -181,7 +238,7 @@ def mainLoop():
         if(calibrationCheckBox.checkState() != 0):
             calibration(color_image, index)
 
-            # update qt image box
+        # update qt image box
         imgBlocks[index][0].setImage(color_image)
         imgBlocks[index][1].setImage(depth_colormap)
 

@@ -21,6 +21,8 @@ pip install pillow
 pip install PyQt5
 
 pip install wxPython
+
+pip install plyfile
 ```
 
 - 範例程式

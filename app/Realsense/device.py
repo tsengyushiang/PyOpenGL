@@ -1,7 +1,7 @@
 import pyrealsense2 as rs
 import numpy as np
 import cv2
-import datetime
+import os
 
 
 def GetAllRealsenses():
@@ -42,7 +42,7 @@ class Device:
         # get camera instri
         profile = cfg.get_stream(rs.stream.depth)
         self.intr = profile.as_video_stream_profile().get_intrinsics()
-        print(self.intr.ppx, self.intr.ppy, self.intr.fx, self.intr.fy)
+        #print(self.intr.ppx, self.intr.ppy, self.intr.fx, self.intr.fy)
         # print(self.intr.coeffs)
 
         depth_sensor = cfg.get_device().first_depth_sensor()
@@ -87,14 +87,10 @@ class Device:
 
         return self.color_image, self.depth_colormap, self.points.reshape(self.h*self.w, 3)
 
-    def saveFrames(self, imgPath='img'):
+    def saveFrames(self, path):
         self.getFrames()
 
-        currentTime = datetime.datetime.now()
-        currentTimeStr = currentTime.strftime("%Y%m%d_%H%M%S")
-
-        depthImgpostfix = '.depth.'+self.serial_num+'.'+currentTimeStr+'.png'
-        colorImgpostfix = '.color.'+self.serial_num+'.'+currentTimeStr+'.png'
-
-        cv2.imwrite(imgPath+depthImgpostfix, self.color_image)
-        cv2.imwrite(imgPath+colorImgpostfix, self.depth_colormap)
+        cv2.imwrite(
+            os.path.join(path, self.serial_num+'.depth'+'.png'), self.color_image)
+        cv2.imwrite(
+            os.path.join(path, self.serial_num+'.color'+'.png'), self.depth_colormap)
