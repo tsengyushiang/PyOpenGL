@@ -13,10 +13,11 @@ class QtcvImage():
         w = self.qtLabel.size().width()
         h = self.qtLabel.size().height()
         resizedMat = cv2.resize(cvmat, (w, h), interpolation=cv2.INTER_CUBIC)
-        height, width, channel = resizedMat.shape
+        flipmat = cv2.flip(resizedMat, 1)
+        height, width, channel = flipmat.shape
         bytesPerline = 3 * width
 
-        qImg = QImage(resizedMat.data, w, h, bytesPerline,
+        qImg = QImage(flipmat.data, w, h, bytesPerline,
                       QImage.Format_RGB888).rgbSwapped()
 
         self.qtLabel.setPixmap(QPixmap.fromImage(qImg))

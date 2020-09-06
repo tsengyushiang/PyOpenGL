@@ -101,46 +101,53 @@ aruco = Aruco()
 
 def calibration(color_image, index):
     # Aruco test
-    corner1, middle, corner2, middle2 = aruco.findMarkers(
+    corner1, middle, corner2, middle2, num = aruco.findMarkers(
         color_image)
 
-    markerPoint1 = device.pixel2point(corner1)
-    markerPointMiddle = device.pixel2point(middle)
-    markerPoint2 = device.pixel2point(corner2)
-    markerPointMiddle2 = device.pixel2point(middle2)
+    def reset():
+        uniforms[index].setValue('extrinct', np.array([
+                [1.0, 0.0, 0.0, 0.0],
+                [0.0, 1.0, 0.0, 0.0],
+                [0.0, 0.0, 1.0, 0.0],
+                [0.0, 0.0, 0.0, 1.0]
+        ]))
+        #print("calibration error")
 
-    centerPoint = (markerPoint1+markerPointMiddle +
-                   markerPoint2+markerPointMiddle2)/4
+    if(num > 0):
+        markerPoint1 = device.pixel2point(corner1)
+        markerPointMiddle = device.pixel2point(middle)
+        markerPoint2 = device.pixel2point(corner2)
+        markerPointMiddle2 = device.pixel2point(middle2)
 
-    edge1 = markerPoint1-markerPointMiddle
-    edge2 = markerPoint2-markerPointMiddle
+        centerPoint = (markerPoint1+markerPointMiddle +
+                       markerPoint2+markerPointMiddle2)/4
 
-    x = edge1 / np.linalg.norm(edge1)
-    z = edge2 / np.linalg.norm(edge2)
-    y = np.array([
-        x[1]*z[2]-x[2]*z[1],
-        x[2]*z[0]-x[0]*z[2],
-        x[0]*z[1]-x[1]*z[0],
-    ])
+        edge1 = markerPoint1-markerPointMiddle
+        edge2 = markerPoint2-markerPointMiddle
 
-    coordMarker = np.array([
-        [x[0], -y[0], z[0], centerPoint[0]],
-        [x[1], -y[1], z[1], centerPoint[1]],
-        [x[2], -y[2], z[2], centerPoint[2]],
-        [0, 0, 0, 1.0]
-    ])
-
-    try:
-        inverCoordMarker = np.linalg.inv(coordMarker)
-        uniforms[index].setValue('extrinct', inverCoordMarker)
-    except:
-        uniforms[index].setValue('extrinct', np.array[
-            [1.0, 0.0, 0.0, 0.0],
-            [0.0, 1.0, 0.0, 0.0],
-            [0.0, 0.0, 1.0, 0.0],
-            [0.0, 0.0, 0.0, 1.0]
+        x = edge1 / np.linalg.norm(edge1)
+        z = edge2 / np.linalg.norm(edge2)
+        y = np.array([
+            x[1]*z[2]-x[2]*z[1],
+            x[2]*z[0]-x[0]*z[2],
+            x[0]*z[1]-x[1]*z[0],
         ])
-        print("calibration error")
+
+        coordMarker = np.array([
+            [x[0], -y[0], z[0], centerPoint[0]],
+            [x[1], -y[1], z[1], centerPoint[1]],
+            [x[2], -y[2], z[2], centerPoint[2]],
+            [0, 0, 0, 1.0]
+        ])
+
+        try:
+            inverCoordMarker = np.linalg.inv(coordMarker)
+            uniforms[index].setValue('extrinct', inverCoordMarker)
+        except:
+            reset()
+    else:
+        reset()
+
 
 def mainLoop():
     scene.update()
