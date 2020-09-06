@@ -17,6 +17,7 @@ from opengl.Material.ShaderMaterial import *
 from opengl.Mesh import *
 from opengl.Uniform import *
 from opengl.Texture import *
+import opengl.Helper as Glhelper
 
 import shaders.realsensePointCloud as myShader
 
@@ -36,6 +37,8 @@ scene.update()
 imgsTextures = []
 pointCloudGeos = []
 uniforms = []
+pos = [1, 1, 1]
+neg = [-1, -1, -1]
 
 
 def addPointClouds(w, h, intr):
@@ -54,7 +57,8 @@ def addPointClouds(w, h, intr):
     uniform.addFloat('w', w)
     uniform.addFloat('h', h)
     uniform.addvec3('offset', [0, 0, 0])
-    uniform.addvec3('maker2', [0, 0, 0])
+    uniform.addvec3('bboxPos', pos)
+    uniform.addvec3('bboxNeg', neg)
     uniform.addMat4('extrinct', [
         [1.0, 0.0, 0.0, 0.0],
         [0.0, 1.0, 0.0, 0.0],
@@ -148,6 +152,26 @@ def calibration(color_image, index):
     else:
         reset()
 
+
+def monitorScrollBar():
+    pos[0] = ui.posX.value()/10
+    pos[1] = ui.posY.value()/10
+    pos[2] = ui.posZ.value()/10
+    neg[0] = ui.negX.value()/10
+    neg[1] = ui.negY.value()/10
+    neg[2] = ui.negZ.value()/10
+
+    for uniform in uniforms:
+        uniform.setValue('bboxPos', pos)
+        uniform.setValue('bboxNeg', neg)
+
+
+def customPaint():
+    Glhelper.drawXYZaxis()
+    Glhelper.drawBbox(pos, neg)
+    monitorScrollBar()
+
+scene.customRender.append(customPaint)
 
 def mainLoop():
     scene.update()

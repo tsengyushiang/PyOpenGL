@@ -10,30 +10,40 @@ import math
 class Camera:
     def __init__(self, width, height):
         self.setViewport(width, height)
-            
+
         self.minAzimuthangle = 0
         self.maxAzimuthangle = 180
-        self.zoomSensitivity = 0.1
+        self.zoomSensitivity = 0.5
 
         self.polarAngle = 0
         self.azimuthangle = 1
         self.radius = 3
+
+        self.w = width
+        self.h = height
 
         self.center = (0.0, 0.0, 0.0)
 
         self.mouseCoord = None
 
     def setViewport(self, width, height):
+        self.w = width
+        self.h = height
+
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
 
         glViewport(0, 0, width, height)
         gluPerspective(60.0, float(width)/float(height), 0.01, 100.0)
-        
+
     def update(self):
 
-        glMatrixMode(GL_MODELVIEW)
+        glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
+
+        glViewport(0, 0, self.w, self.h)
+        gluPerspective(60.0, float(self.w)/float(self.h), 0.01, 100.0)
+
         coord = Spherical2Cartesian(
             (self.radius, self.polarAngle, self.azimuthangle))
         gluLookAt(coord[0], coord[2], coord[1],  self.center[0],
@@ -53,7 +63,7 @@ class Camera:
             self.zoom(1)
 
     def handleGLUTMouseMove(self, x, y):
-        #print(x, y, self.mouseCoord)
+        # print(x, y, self.mouseCoord)
         if(self.mouseCoord != None):
 
             deltaX = x-self.mouseCoord[0]
