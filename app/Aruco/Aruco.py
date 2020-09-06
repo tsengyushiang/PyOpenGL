@@ -38,12 +38,13 @@ class Aruco():
         for markerCorner in markerCorners:
             cv2.circle(
                 color_image, (markerCorner[0][0][0], markerCorner[0][0][1]), 15, (0, 255, 255), 3)
-            #cv2.circle(color_image, (markerCorner[0][1][0], markerCorner[0][1][1]), 15, (0, 0, 255), 3)
+            cv2.circle(
+                color_image, (markerCorner[0][1][0], markerCorner[0][1][1]), 15, (0, 0, 255), 3)
             cv2.circle(
                 color_image, (markerCorner[0][2][0], markerCorner[0][2][1]), 15, (255, 0, 255), 3)
             #cv2.circle(color_image, (markerCorner[0][3][0], markerCorner[0][3][1]), 15, (255, 255,), 3)
 
         if(len(markerCorners) > 0):
-            return (markerCorners[0][0][0][0], markerCorners[0][0][0][1]), (markerCorners[0][0][2][0], markerCorners[0][0][2][1])
+            return (markerCorners[0][0][0][0], markerCorners[0][0][0][1]), (markerCorners[0][0][1][0], markerCorners[0][0][1][1]), (markerCorners[0][0][2][0], markerCorners[0][0][2][1]), (markerCorners[0][0][3][0], markerCorners[0][0][3][1])
         else:
-            return (0, 0), (0, 0)
+            return (0, 0), (0, 0), (0, 0), (0, 0)

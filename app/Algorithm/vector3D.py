@@ -2,6 +2,10 @@ import numpy as np
 
 
 def rotation_matrix_from_vectors(vec1, vec2):
+
+    if(vec2[0] == 0 and vec2[1] == 0 and vec2[2] == 0):
+        return [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]
+    
     """ Find the rotation matrix that aligns vec1 to vec2
     :param vec1: A 3d "source" vector
     :param vec2: A 3d "destination" vector
@@ -15,6 +19,3 @@ def rotation_matrix_from_vectors(vec1, vec2):
     kmat = np.array([[0, -v[2], v[1]], [v[2], 0, -v[0]], [-v[1], v[0], 0]])
     rotation_matrix = np.eye(3) + kmat + kmat.dot(kmat) * ((1 - c) / (s ** 2))
     return rotation_matrix
-
-
-print(rotation_matrix_from_vectors([1, 0, 0], [0, 2, 0]))

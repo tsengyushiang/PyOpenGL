@@ -59,7 +59,7 @@ class Device:
 
         pointX = (x-self.intr.ppx)/self.intr.fx
         pointY = (y-self.intr.ppy)/self.intr.fy
-        return [pointX*d, pointY*d, d]
+        return np.array([pointX*d, pointY*d, d])
 
     def getFrames(self):
 

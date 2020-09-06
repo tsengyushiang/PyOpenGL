@@ -119,6 +119,9 @@ class Ui_MainWindow(object):
         self.verticalLayout.addLayout(self.verticalLayout_2)
         self.horizontalLayout.addWidget(self.verticalWidget)
         self.gridLayout.addLayout(self.horizontalLayout, 0, 0, 1, 1)
+        self.checkBox = QtWidgets.QCheckBox(self.centralwidget)
+        self.checkBox.setObjectName("checkBox")
+        self.gridLayout.addWidget(self.checkBox, 1, 0, 1, 1)
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 663, 21))
@@ -142,6 +145,7 @@ class Ui_MainWindow(object):
         self.label21.setText(_translate("MainWindow", "TextLabel"))
         self.label30.setText(_translate("MainWindow", "TextLabel"))
         self.label31.setText(_translate("MainWindow", "TextLabel"))
+        self.checkBox.setText(_translate("MainWindow", "calibration mode"))
 
 
 if __name__ == "__main__":

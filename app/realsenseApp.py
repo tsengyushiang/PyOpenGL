@@ -4,6 +4,7 @@ from qtLayout.fourRealsense import *
 from PyQt5.QtCore import *
 
 from Aruco.Aruco import Aruco
+from Algorithm.vector3D import rotation_matrix_from_vectors
 
 from Realsense.device import *
 
@@ -81,6 +82,8 @@ imgBlocks = [
     [QtcvImage(ui.label30), QtcvImage(ui.label31)]
 ]
 
+calibrationCheckBox = ui.checkBox
+
 # setUp realsense
 connected_devices = GetAllRealsenses()
 
@@ -91,9 +94,47 @@ for device in connected_devices:
 MainWindow.show()
 
 aruco = Aruco()
-#aruco.saveMarkers()
+# aruco.saveMarkers()
 
 # render loop
+
+
+def calibration(color_image, index):
+    # Aruco test
+    corner1, middle, corner2, middle2 = aruco.findMarkers(
+        color_image)
+
+    markerPoint1 = device.pixel2point(corner1)
+    markerPointMiddle = device.pixel2point(middle)
+    markerPoint2 = device.pixel2point(corner2)
+    markerPointMiddle2 = device.pixel2point(middle2)
+
+    centerPoint = (markerPoint1+markerPointMiddle +
+                   markerPoint2+markerPointMiddle2)/4
+
+    edge1 = markerPoint1-markerPointMiddle
+    edge2 = markerPoint2-markerPointMiddle
+
+    x = edge1 / np.linalg.norm(edge1)
+    z = edge2 / np.linalg.norm(edge2)
+    y = np.array([
+        x[1]*z[2]-x[2]*z[1],
+        x[2]*z[0]-x[0]*z[2],
+        x[0]*z[1]-x[1]*z[0],
+    ])
+
+    coordMarker = np.array([
+        [x[0], y[0], z[0], centerPoint[0]],
+        [x[1], y[1], z[1], centerPoint[1]],
+        [x[2], y[2], z[2], centerPoint[2]],
+        [0, 0, 0, 1.0]
+    ])
+
+    try:
+        inverCoordMarker = np.linalg.inv(coordMarker)
+        uniforms[index].setValue('extrinct', inverCoordMarker)
+    except:
+        print("calibration error")
 
 
 def mainLoop():
@@ -101,15 +142,10 @@ def mainLoop():
     for index, device in enumerate(connected_devices):
         color_image, depth_colormap, pointcloud = device.getFrames()
 
-        # Aruco test
-        markerPixel1, markerPixel2 = aruco.findMarkers(color_image)
-        markerPoint1 = device.pixel2point(markerPixel1)
-        markerPoint2 = device.pixel2point(markerPixel2)
+        if(calibrationCheckBox.checkState() != 0):
+            calibration(color_image, index)
 
-        uniforms[index].setValue('maker1', markerPoint1)
-        uniforms[index].setValue('maker2', markerPoint2)
-
-        # update qt image box
+            # update qt image box
         imgBlocks[index][0].setImage(color_image)
         imgBlocks[index][1].setImage(depth_colormap)
 

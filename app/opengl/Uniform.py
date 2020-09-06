@@ -40,6 +40,10 @@ class Uniform:
             if(vec3[0] == name):
                 vec3[1] = value
 
+        for mat4 in self.mat4s:
+            if(mat4[0] == name):
+                mat4[1] = value
+
     def update(self, shader):
         for texture in self.textures:
             location = glGetUniformLocation(shader, texture[0])
