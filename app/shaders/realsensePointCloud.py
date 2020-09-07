@@ -1,6 +1,6 @@
 vertex_shader =\
     '''
-#version 120
+#version 130
 
 uniform float fx;
 uniform float fy;
@@ -8,27 +8,38 @@ uniform float ppx;
 uniform float ppy;
 uniform float h;
 uniform float w;
-
 uniform mat4 extrinct;
+
+attribute float depthValue;
 
 varying vec3 pos;
 varying vec2 uv;
 
+vec3 pixel2point(vec2 pixel,float depthValue){
+    float x = (pixel.x-ppx)/fx;
+    float y = (pixel.y-ppy)/fy;
+    return vec3(x*depthValue,y*depthValue,depthValue);
+}
+
 void main() {
 
-    vec4 offsetPos = extrinct * gl_Vertex;
+    float x = mod(gl_VertexID,w);
+    float y = h-gl_VertexID/w;
+
+    vec2 pixel = vec2(x,y);
+
+    vec3 point = pixel2point(pixel,depthValue);
+    
+    vec4 offsetPos = extrinct * vec4(point.xyz,1.0);
     gl_Position =  gl_ModelViewProjectionMatrix *offsetPos;
 
     pos = offsetPos.xyz;
-    uv = vec2(  
-        (gl_Vertex.x/gl_Vertex.z*fx+ppx)/w,
-        (gl_Vertex.y/gl_Vertex.z*fy+ppy)/h
-    );
+    uv = vec2(x/w,y/h);
 }
 '''
 fragment_shader =\
     '''
-#version 120
+#version 130
 
 varying vec2 uv;
 uniform sampler2D texColor;

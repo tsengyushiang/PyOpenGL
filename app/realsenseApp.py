@@ -14,8 +14,7 @@ from Realsense.device import *
 from opencv.QtcvImage import *
 
 from opengl.Scene.QtGLScene import *
-from opengl.Geometry.PointGeometry import *
-from opengl.Geometry.ObjGeometry import *
+from opengl.Geometry.DepthArrGeometry import *
 from opengl.Material.ShaderMaterial import *
 from opengl.Mesh import *
 from opengl.Uniform import *
@@ -77,7 +76,7 @@ def addPointClouds(w, h, intr):
                          myShader.fragment_shader,
                          uniform)
 
-    geo = PointGeometry(np.empty((w*h, 3), dtype=float))
+    geo = DepthArrGeometry(np.ones(w*h))
     pointCloudGeos.append(geo)
 
     mesh = Mesh(mat, geo)
@@ -89,6 +88,8 @@ imgBlocks = [
     [QtcvImage(ui.label10), QtcvImage(ui.label11)],
     [QtcvImage(ui.label20), QtcvImage(ui.label21)],
     [QtcvImage(ui.label30), QtcvImage(ui.label31)]
+
+
 ]
 
 calibrationCheckBox = ui.checkBox
@@ -142,10 +143,18 @@ def calibration(color_image, index):
             x[0]*z[1]-x[1]*z[0],
         ])
 
+        '''
         coordMarker = np.array([
             [x[0], -y[0], z[0], centerPoint[0]],
             [x[1], -y[1], z[1], centerPoint[1]],
             [x[2], -y[2], z[2], centerPoint[2]],
+            [0, 0, 0, 1.0]
+        ])
+        '''
+        coordMarker = np.array([
+            [1.0, 0, 0, markerPoint1[0]],
+            [0, 1.0, 0, markerPoint1[1]],
+            [0, 0, 1.0, markerPoint1[2]],
             [0, 0, 0, 1.0]
         ])
 
@@ -196,7 +205,7 @@ def save():
         mat4 = uniforms[index].getValue('extrinct')
 
         clipPoints = []
-        for points in device.points.reshape(device.h*device.w, 3):
+        for points in device.getPoints().reshape(device.h*device.w, 3):
             vec = np.array([points[0], points[1], points[2], 1.0])
             alignedVec = mat4.dot(vec)
 
@@ -233,7 +242,7 @@ ui.pushButton.clicked.connect(save)
 def mainLoop():
     scene.update()
     for index, device in enumerate(connected_devices):
-        color_image, depth_colormap, pointcloud = device.getFrames()
+        color_image, depth_colormap, depthValues = device.getFrames()
 
         if(calibrationCheckBox.checkState() != 0):
             calibration(color_image, index)
@@ -247,7 +256,7 @@ def mainLoop():
         imgsTextures[index][1].update(depth_colormap)
 
         # print(pointcloud)
-        pointCloudGeos[index].update(pointcloud)
+        pointCloudGeos[index].update(depthValues)
 
     scene.updateDone()
 

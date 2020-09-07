@@ -5,7 +5,8 @@ class Mesh():
         self.geometry = geo
 
     def init(self):
-        self.material.init()
+        shader = self.material.init()
+        self.geometry.shader = shader
         self.geometry.init()
 
     def draw(self):

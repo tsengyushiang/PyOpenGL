@@ -42,7 +42,7 @@ class Device:
         # get camera instri
         profile = cfg.get_stream(rs.stream.depth)
         self.intr = profile.as_video_stream_profile().get_intrinsics()
-        #print(self.intr.ppx, self.intr.ppy, self.intr.fx, self.intr.fy)
+        # print(self.intr.ppx, self.intr.ppy, self.intr.fx, self.intr.fy)
         # print(self.intr.coeffs)
 
         depth_sensor = cfg.get_device().first_depth_sensor()
@@ -54,9 +54,17 @@ class Device:
 
     def pixel2point(self, coord):
 
-        x = int(coord[0])
-        y = int(coord[1])
-        return self.points[y][x]
+        id = int(coord[0])*self.w + int(coord[1])
+
+        x = id % self.w
+        y = self.h-id//self.w
+
+        xP = (x-self.intr.ppx)/self.intr.fx
+        yP = (y-self.intr.ppy)/self.intr.fy
+
+        depth = self.depthValues[y][x]
+
+        return np.array([xP*depth, yP*depth, depth])
 
     def getFrames(self):
 
@@ -78,14 +86,17 @@ class Device:
         # ref : https://github.com/IntelRealSense/librealsense/blob/6ded42e4f1709acc60bdd42667028f221b9e6094/include/librealsense2/rsutil.h#L46
         self.depthValues = np.asanyarray(
             depth_frame.get_data())*self.depth_scale
+
+        return self.color_image, self.depth_colormap, self.depthValues.flatten()
+
+    def getPoints(self):
         h = (np.arange(self.h, dtype=float)[::-1]-self.intr.ppy)/self.intr.fy
         w = (np.arange(self.w, dtype=float)-self.intr.ppx)/self.intr.fx
-        self.points = np.empty((self.h, self.w, 3), dtype=float)
-        self.points[:, :, 1] = h[:, None]*self.depthValues
-        self.points[:, :, 0] = w*self.depthValues
-        self.points[:, :, 2] = self.depthValues
-
-        return self.color_image, self.depth_colormap, self.points.reshape(self.h*self.w, 3)
+        points = np.empty((self.h, self.w, 3), dtype=float)
+        points[:, :, 1] = h[:, None]*self.depthValues
+        points[:, :, 0] = w*self.depthValues
+        points[:, :, 2] = self.depthValues
+        return points
 
     def saveFrames(self, path):
         self.getFrames()

@@ -18,12 +18,14 @@ class ShaderMaterial():
             VERTEX_SHADER, FRAGMENT_SHADER)
 
         self.uniform.init()
+        
+        return self.shader
 
     def activate(self):
         # use shader
         shaders.glUseProgram(self.shader)
 
-        self.uniform.update(self.shader)       
+        self.uniform.update(self.shader)
 
     def deactivate(self):
         shaders.glUseProgram(0)
