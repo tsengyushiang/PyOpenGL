@@ -54,17 +54,12 @@ class Device:
 
     def pixel2point(self, coord):
 
-        id = int(coord[0])*self.w + int(coord[1])
+        depth = self.depthValues[int(coord[1])][int(coord[0])]
 
-        x = id % self.w
-        y = self.h-id//self.w
+        pointX = (coord[0]-self.intr.ppx)/self.intr.fx*depth
+        pointY = (self.h-coord[1]-self.intr.ppy)/self.intr.fy*depth
 
-        xP = (x-self.intr.ppx)/self.intr.fx
-        yP = (y-self.intr.ppy)/self.intr.fy
-
-        depth = self.depthValues[y][x]
-
-        return np.array([xP*depth, yP*depth, depth])
+        return np.array([pointX, pointY, depth])
 
     def getFrames(self):
 
@@ -82,14 +77,13 @@ class Device:
         self.depth_colormap = np.asanyarray(
             colorizer.colorize(depth_frame).get_data())
 
-        # calc point cloud
-        # ref : https://github.com/IntelRealSense/librealsense/blob/6ded42e4f1709acc60bdd42667028f221b9e6094/include/librealsense2/rsutil.h#L46
         self.depthValues = np.asanyarray(
             depth_frame.get_data())*self.depth_scale
 
         return self.color_image, self.depth_colormap, self.depthValues.flatten()
 
     def getPoints(self):
+        # calc point cloud
         h = (np.arange(self.h, dtype=float)[::-1]-self.intr.ppy)/self.intr.fy
         w = (np.arange(self.w, dtype=float)-self.intr.ppx)/self.intr.fx
         points = np.empty((self.h, self.w, 3), dtype=float)
