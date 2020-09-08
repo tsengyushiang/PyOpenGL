@@ -3,6 +3,8 @@ import sys
 from qtLayout.realsenseClient import *
 from PyQt5.QtCore import *
 
+from Realsense.device import *
+
 from Network.socket.Client import Client
 from Network.data.RealsenseData import RealsenseData
 
@@ -13,15 +15,24 @@ ui = Ui_MainWindow()
 ui.setupUi(MainWindow)
 
 socket = Client("192.168.50.105", 8002)
-ui.statusbar.showMessage(socket.log)
 capture = cv2.VideoCapture(0)
+
+# setUp realsense
+connected_devices = GetAllRealsenses()
+
+# Start streaming from cameras
+for device in connected_devices:
+    device.start()
 
 
 def mainloop():
-    ret, frame = capture.read()
+    ui.statusbar.showMessage(socket.log)
+
+    color_image, depth_colormap, depthValues = device.getFrames()
 
     data = RealsenseData()
-    data.color = frame
+    data.color = color_image
+    data.depth = depth_colormap
     socket.send(data)
 
 

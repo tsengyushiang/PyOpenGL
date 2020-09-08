@@ -17,7 +17,8 @@ ui.setupUi(MainWindow)
 socket = Server(8002)
 ui.statusbar.showMessage(socket.log)
 
-imgBox = QtcvImage(ui.label)
+colorBox = QtcvImage(ui.label)
+depthBox = QtcvImage(ui.label_2)
 
 
 def mainloop():
@@ -25,7 +26,8 @@ def mainloop():
 
     if(data != None):
         dataFromated = RealsenseData().fromArr(data)
-        imgBox.setImage(dataFromated.color)
+        colorBox.setImage(dataFromated.color)
+        depthBox.setImage(dataFromated.depth)
     pass
 
 

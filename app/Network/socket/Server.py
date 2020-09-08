@@ -8,7 +8,6 @@ from _pickle import dumps, loads
 
 
 def recvall(sock, count):
-    print('request ', count)
     buf = b''
     while count:
         newbuf = sock.recv(count)
@@ -16,7 +15,6 @@ def recvall(sock, count):
             return None
         buf += newbuf
         count -= len(newbuf)
-        print('buf :', len(buf))
     return buf
 
 
@@ -29,7 +27,7 @@ class Server:
 
         self.sock = socket.socket()
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 64*1024)
+        self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 128*1024)
 
         self.sock.bind((self.ip, self.port))
         self.sock.setblocking(0)  # socket設成「非阻塞」模式
@@ -58,7 +56,10 @@ class Server:
                 print(addr)
                 self.inputs.append(client)
             else:
-                data = self.recv(sck)
+                try:
+                    data = self.recv(sck)
+                except:
+                    data = None
 
         return data
 

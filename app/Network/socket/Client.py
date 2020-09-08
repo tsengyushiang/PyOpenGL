@@ -12,27 +12,42 @@ class Client:
         self.port = port
         self.sock = socket.socket()
 
+        self.tryAgainTime = 100
+        self.waitTime = 0
+        self.log = 'init...'
+
+        self.connect()
+
+    def connect(self):
         try:
-            self.sock.connect((ip, port))
-            self.log = ("{0}:{1} connect successfully.".format(ip, port))
+            if(self.waitTime > 0):
+                raise
+
+            self.waitTime = self.tryAgainTime
+            self.sock = socket.socket()
+            self.sock.connect((self.ip, self.port))
+            self.log = ("{0}:{1} connect successfully.".format(
+                self.ip, self.port))
         except:
-            self.sock = None
-            self.log = ("{0}:{1} server not found.".format(ip, port))
+            self.log = "{0}:{1} server not found, try reconnect after {2} msec.".format(
+                self.ip, self.port, self.waitTime)
+
+        self.waitTime = self.waitTime-1
 
     def send(self, data):
 
-        if(self.sock == None):
-            return
+        try:
+            dataByte = dumps(data.toArr())
+            dataLenByte = struct.pack('i', len(dataByte))
 
-        dataByte = dumps(data.toArr())
-        dataLenByte = struct.pack('i', len(dataByte))
-
-        self.sock.send(dataLenByte)
-        self.sock.send(dataByte)
+            self.sock.send(dataLenByte)
+            self.sock.send(dataByte)
+        except:
+            self.connect()
 
     def stop(self):
 
-        if(self.sock == None):
-            return
-
-        self.sock.close()
+        try:
+            self.sock.close()
+        except:
+            pass
