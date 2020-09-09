@@ -83,11 +83,11 @@ class QtGLScene():
         self.openGLWidget.makeCurrent()
         self.camera.setViewport(self.size[0], self.size[1])
 
-    def update(self):
+    def startDraw(self):
         self.openGLWidget.makeCurrent()
         self.openGLWidget.update()
 
-    def updateDone(self):
+    def endDraw(self):
         self.openGLWidget.doneCurrent()
 
     def wheelEvent(self, evt):

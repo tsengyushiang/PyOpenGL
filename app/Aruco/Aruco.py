@@ -53,3 +53,6 @@ class Aruco():
             (markerCorners[0][0][2][0], markerCorners[0][0][2][1]), \
             (markerCorners[0][0][3][0], markerCorners[0][0][3][1]),\
             len(markerCorners)
+
+
+ArucoInstance = Aruco()

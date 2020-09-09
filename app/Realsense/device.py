@@ -2,6 +2,7 @@ import pyrealsense2 as rs
 import numpy as np
 import cv2
 import os
+from dotmap import DotMap
 
 
 def GetAllRealsenses():
@@ -17,11 +18,15 @@ def GetAllRealsenses():
 
 
 class Device:
-    def __init__(self, serial_num):
+    def __init__(self, serial_num, isPhysic=True):
+        print('create Realsense', serial_num)
         self.serial_num = serial_num
         self.w = 640
         self.h = 480
-        self.configPipeLine()
+
+        self.pipeline = None
+        if(isPhysic):
+            self.configPipeLine()
 
     def configPipeLine(self):
         self.pipeline = rs.pipeline()
@@ -37,20 +42,22 @@ class Device:
         self.align = rs.align(align_to)
 
     def start(self):
-        cfg = self.pipeline.start(self.config)
+        if(self.pipeline):
+            cfg = self.pipeline.start(self.config)
 
-        # get camera instri
-        profile = cfg.get_stream(rs.stream.depth)
-        self.intr = profile.as_video_stream_profile().get_intrinsics()
-        # print(self.intr.ppx, self.intr.ppy, self.intr.fx, self.intr.fy)
-        # print(self.intr.coeffs)
+            # get camera instri
+            profile = cfg.get_stream(rs.stream.depth)
+            self.intr = profile.as_video_stream_profile().get_intrinsics()
+            # print(self.intr.ppx, self.intr.ppy, self.intr.fx, self.intr.fy)
+            # print(self.intr.coeffs)
 
-        depth_sensor = cfg.get_device().first_depth_sensor()
-        self.depth_scale = depth_sensor.get_depth_scale()
-        # print("Depth Scale is: ", depth_scale)
+            depth_sensor = cfg.get_device().first_depth_sensor()
+            self.depth_scale = depth_sensor.get_depth_scale()
+            # print("Depth Scale is: ", depth_scale)
 
     def stop(self):
-        self.pipeline.stop()
+        if(self.pipeline):
+            self.pipeline.stop()
 
     def pixel2point(self, coord):
 
@@ -61,24 +68,38 @@ class Device:
 
         return np.array([pointX, pointY, depth])
 
+    def setData(self, data):
+        self.depth_scale = data.depth_scale
+        self.intr = DotMap()
+        self.intr.ppx = data.ppx
+        self.intr.ppy = data.ppy
+        self.intr.fx = data.fx
+        self.intr.fy = data.fy
+        self.w = data.w
+        self.h = data.h
+        self.color_image = data.color
+        self.depth_colormap = data.depthMap
+        self.depthValues = data.depth*data.depth_scale
+
     def getFrames(self):
 
-        frames = self.pipeline.wait_for_frames()
-        frames = self.align.process(frames)
-        depth_frame = frames.get_depth_frame()
-        color_frame = frames.get_color_frame()
+        if(self.pipeline):
+            frames = self.pipeline.wait_for_frames()
+            frames = self.align.process(frames)
+            depth_frame = frames.get_depth_frame()
+            color_frame = frames.get_color_frame()
 
-        if not depth_frame or not color_frame:
-            print(self.serial_num, 'retrieve frame error !!')
-            return null, null
+            if not depth_frame or not color_frame:
+                print(self.serial_num, 'retrieve frame error !!')
+                return None, None, None
 
-        self.color_image = np.asanyarray(color_frame.get_data())
-        colorizer = rs.colorizer()
-        self.depth_colormap = np.asanyarray(
-            colorizer.colorize(depth_frame).get_data())
+            self.color_image = np.asanyarray(color_frame.get_data())
+            colorizer = rs.colorizer()
+            self.depth_colormap = np.asanyarray(
+                colorizer.colorize(depth_frame).get_data())
 
-        self.depthValues = np.asanyarray(
-            depth_frame.get_data())*self.depth_scale
+            self.depth_image = np.asanyarray(depth_frame.get_data())
+            self.depthValues = self.depth_image*self.depth_scale
 
         return self.color_image, self.depth_colormap, self.depthValues.flatten()
 
