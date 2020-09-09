@@ -91,6 +91,9 @@ class UIControls():
         # 單擊觸發自定義的槽函式
         self.ui.listView.clicked.connect(self.listClicked)
 
+    def log(self, msg):
+        self.ui.statusbar.showMessage(msg)
+
 
 class DevicesControls():
     def __init__(self, hardware):
@@ -229,8 +232,8 @@ class App():
 
     def initDevices(self):
         # setUp realsense
-        connected_devices = GetAllRealsenses()
-        #connected_devices = []
+        #connected_devices = GetAllRealsenses()
+        connected_devices = []
         self.devicesControls = {}
 
         # Start streaming from cameras
@@ -261,9 +264,6 @@ class App():
         timer = QTimer(MainWindow)
         timer.timeout.connect(self.mainloop)
         timer.start(1)
-
-        ui.statusbar.showMessage(
-            "Find {0} realsense(s).".format(len(self.devicesControls)))
 
         app.exec_()
 
@@ -329,6 +329,8 @@ class App():
             self.uiControls.setList(self.devicesControls.keys())
 
         self.scene.endDraw()
+        self.uiControls.log("Find {0} realsense(s).".format(
+            len(self.devicesControls)))
 
     def save(self):
         currentTime = datetime.datetime.now()

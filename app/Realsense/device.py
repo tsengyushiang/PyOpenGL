@@ -56,7 +56,8 @@ class Device:
             # print("Depth Scale is: ", depth_scale)
 
     def stop(self):
-        self.pipeline.stop()
+        if(self.pipeline):
+            self.pipeline.stop()
 
     def pixel2point(self, coord):
 
@@ -77,7 +78,7 @@ class Device:
         self.w = data.w
         self.h = data.h
         self.color_image = data.color
-        self.depth_colormap = data.color
+        self.depth_colormap = data.depthMap
         self.depthValues = data.depth*data.depth_scale
 
     def getFrames(self):
