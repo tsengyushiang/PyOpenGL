@@ -3,19 +3,9 @@ import socket
 import struct
 import numpy as np
 from _pickle import dumps, loads
+import threading
 
-# ref : https://swf.com.tw/?p=1201
-
-
-def recvall(sock, n):
-    # Helper function to recv n bytes or return None if EOF is hit
-    data = bytearray()
-    while len(data) < n:
-        packet = sock.recv(n - len(data))
-        if not packet:
-            return None
-        data.extend(packet)
-    return data
+# ref : https://medium.com/@fromtheast/fast-camera-live-streaming-with-udp-opencv-de2f84c73562
 
 
 class Server:
@@ -25,42 +15,44 @@ class Server:
         self.ip = socket.gethostbyname(hostname)
         self.port = port
 
-        self.sock = socket.socket()
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 64*1024)
-
         self.sock.bind((self.ip, self.port))
-        self.sock.setblocking(0)  # socket設成「非阻塞」模式
-        self.sock.listen(5)
         self.inputs = [self.sock]
         self.log = "Server Listen on {0}:{1}".format(
             self.ip, self.port)
 
-    def recv(self, sock):
-        dataSizeByte = recvall(sock, struct.calcsize('i'))
-        dataSize = struct.unpack('i', dataSizeByte)[0]
+        self.buffer = {}
+        self.notUsedData = {}
+        self.running = True
+        self.waitDataThread = threading.Thread(target=self.waitClientDatas)
+        self.waitDataThread.start()
 
-        dataByte = recvall(sock, dataSize)
+    def getLatestBytes(self):
+        data = []
+        for keys in self.notUsedData:
+            dataBytes = self.notUsedData[keys]
+            if(dataBytes != None):
+                data.append(dataBytes)
+            self.notUsedData[keys] = None
 
-        data = loads(dataByte)
         return data
 
-    def update(self):
-        readable, _, _ = select.select(self.inputs, [], [], 0.001)
+    def waitClientDatas(self):
+        headerSize = 4
+        while self.running:
+            data, client_address = self.sock.recvfrom(64*1024)
+            if(client_address not in self.buffer):
+                self.buffer[client_address] = b""
 
-        data = None
-        for sck in readable:
-            if sck is self.sock:
-                client, addr = sck.accept()
-                client.setblocking(0)
-                self.inputs.append(client)
+            if struct.unpack("I", data[0:headerSize])[0] > 1:
+                self.buffer[client_address] += data[headerSize:]
             else:
-                try:
-                    data = self.recv(sck)
-                except:
-                    pass
-
-        return data
+                self.buffer[client_address] += data[headerSize:]
+                self.notUsedData[client_address] = self.buffer[client_address]
+                self.buffer[client_address] = b""
 
     def stop(self):
         self.sock.close()
+        self.running = False
+        self.waitDataThread.join()

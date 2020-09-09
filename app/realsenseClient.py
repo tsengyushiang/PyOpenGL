@@ -102,7 +102,7 @@ def mainloop():
 
 timer = QTimer(MainWindow)
 timer.timeout.connect(mainloop)
-timer.start(5)
+timer.start(1)
 
 MainWindow.show()
 app.exec_()

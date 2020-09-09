@@ -1,5 +1,7 @@
 import cv2
 import numpy as np
+from _pickle import dumps, loads
+import struct
 
 
 class RealsenseData():
@@ -16,24 +18,42 @@ class RealsenseData():
         self.depth = np.array([[0]])
         pass
 
-    def toArr(self):
-        _, colorencode = cv2.imencode('.jpg', self.color)
-        #_, depthencode = cv2.imencode('.jpg', self.depth)
+    def parseBigDepth2RGB(self, depthMap):
+        repeat3 = cv2.cvtColor(depthMap, cv2.COLOR_GRAY2RGB)
+        repeat3[:, :, 0] = depthMap >> 16
+        repeat3[:, :, 1] = depthMap % (256*256) >> 8
+        repeat3[:, :, 2] = depthMap & 256
+        print(depthMap)
+        return repeat3
 
-        return [self.serial_num,
-                self.depth_scale,
-                self.w,
-                self.h,
-                self.fx,
-                self.fy,
-                self.ppx,
-                self.ppy,
-                colorencode,
-                self.depth]
+    def toBytes(self):
+        _, colorencode = cv2.imencode('.png', self.color)
 
-    def fromArr(self, arr):
-        decColor = cv2.imdecode(arr[8], 1)
-        #decDepth = cv2.imdecode(arr[9], 1)
+        bigNum2RGB = self.parseBigDepth2RGB(self.depth)
+        _, depthencode = cv2.imencode('.png', bigNum2RGB)
+        decDepth = cv2.imdecode(depthencode, cv2.IMREAD_COLOR)
+
+        comparison = decDepth == bigNum2RGB
+        equal_arrays = comparison.all()
+        print(equal_arrays)
+
+        bytestotal = dumps([self.serial_num,
+                            self.depth_scale,
+                            self.w,
+                            self.h,
+                            self.fx,
+                            self.fy,
+                            self.ppx,
+                            self.ppy,
+                            colorencode,
+                            depthencode])
+
+        return bytestotal
+
+    def fromBytes(self, Bytes):
+        arr = loads(Bytes)
+        decColor = cv2.imdecode(arr[8], cv2.IMREAD_COLOR)
+        decDepth = cv2.imdecode(arr[9], cv2.IMREAD_COLOR)
 
         self.serial_num = arr[0]
         self.depth_scale = arr[1]
@@ -44,5 +64,5 @@ class RealsenseData():
         self.ppx = arr[6]
         self.ppy = arr[7]
         self.color = decColor
-        self.depth = arr[9]
+        self.depth = decDepth
         return self

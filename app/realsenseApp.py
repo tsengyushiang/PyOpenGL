@@ -229,8 +229,8 @@ class App():
 
     def initDevices(self):
         # setUp realsense
-        #connected_devices = GetAllRealsenses()
-        connected_devices = []
+        connected_devices = GetAllRealsenses()
+        #connected_devices = []
         self.devicesControls = {}
 
         # Start streaming from cameras
@@ -251,9 +251,11 @@ class App():
         self.scene.customRender.append(self.customPaint)
 
         MainWindow.show()
+        MainWindow.destroyed.connect(self.programEnd)
 
         # window create init opengl
-        for device in self.devicesControls:
+        for key in self.devicesControls:
+            device = self.devicesControls[key]
             self.scene.add(device.genPointClouds())
 
         timer = QTimer(MainWindow)
@@ -265,7 +267,16 @@ class App():
 
         app.exec_()
 
+    def programEnd(self):
+
+        for key in self.devicesControls:
+            device = self.devicesControls[key]
+            device.device.stop()
+
+        self.socket.stop()
+
     def monitorScrollBar(self):
+
         pos, neg = self.uiControls.getboundary()
 
         for key in self.devicesControls:
@@ -281,9 +292,8 @@ class App():
         self.pos, self.neg = pos, neg
 
     def onClientDataRecv(self, dataBytes):
-        if(dataBytes != None):
-            data = RealsenseData().fromArr(dataBytes)
-
+        try:
+            data = RealsenseData().fromBytes(dataBytes)
             if(data.serial_num not in self.devicesControls):
                 device = Device(data.serial_num, False)
                 controls = DevicesControls(device)
@@ -294,10 +304,14 @@ class App():
                 self.scene.add(controls.genPointClouds())
             else:
                 self.devicesControls[data.serial_num].setData(data)
+        except:
+            # packgae decode error
+            pass
 
     def mainloop(self):
-        data = self.socket.update()
-        self.onClientDataRecv(data)
+        latestBytes = self.socket.getLatestBytes()
+        for dataBytes in latestBytes:
+            self.onClientDataRecv(dataBytes)
 
         self.scene.startDraw()
 
