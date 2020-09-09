@@ -45,7 +45,7 @@ class Server:
         data = loads(dataByte)
         return data
 
-    def getInputs(self):
+    def update(self):
         readable, _, _ = select.select(self.inputs, [], [], 0.001)
 
         data = None
@@ -53,13 +53,12 @@ class Server:
             if sck is self.sock:
                 client, addr = sck.accept()
                 client.setblocking(0)
-                print(addr)
                 self.inputs.append(client)
             else:
                 try:
                     data = self.recv(sck)
                 except:
-                    data = None
+                    pass
 
         return data
 

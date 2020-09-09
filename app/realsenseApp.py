@@ -7,7 +7,9 @@ from qtLayout.RealsenseApp import *
 from PyQt5.QtCore import *
 
 from Aruco.Aruco import ArucoInstance
-from Algorithm.vector3D import rotation_matrix_from_vectors
+
+from Network.socket.Server import Server
+from Network.data.RealsenseData import RealsenseData
 
 from Realsense.device import *
 
@@ -160,6 +162,9 @@ class DevicesControls():
 
         return color_image, depth_colormap
 
+    def setData(self, data):
+        self.device.setData(data)
+
     def calibration(self):
         corner1, middle, corner2, middle2, num = ArucoInstance.findMarkers(
             self.color_image)
@@ -217,18 +222,21 @@ class DevicesControls():
 class App():
     def __init__(self):
         self.initDevices()
+        self.socket = Server(8002)
+
         self.initQtwindow()
         self.pos, self.neg = [1, 1, 1], [-1, -1, -1]
 
     def initDevices(self):
         # setUp realsense
-        connected_devices = GetAllRealsenses()
-        self.devicesControls = []
+        #connected_devices = GetAllRealsenses()
+        connected_devices = []
+        self.devicesControls = {}
 
         # Start streaming from cameras
         for device in connected_devices:
             controls = DevicesControls(device)
-            self.devicesControls.append(controls)
+            self.devicesControls[device.serial_num] = controls
             controls.start()
 
     def initQtwindow(self):
@@ -260,7 +268,8 @@ class App():
     def monitorScrollBar(self):
         pos, neg = self.uiControls.getboundary()
 
-        for device in self.devicesControls:
+        for key in self.devicesControls:
+            device = self.devicesControls[key]
             device.updateBoundary(pos, neg)
 
         return pos, neg
@@ -271,23 +280,39 @@ class App():
         Glhelper.drawBbox(pos, neg)
         self.pos, self.neg = pos, neg
 
+    def onClientDataRecv(self, dataBytes):
+        if(dataBytes != None):
+            data = RealsenseData().fromArr(dataBytes)
+
+            if(data.serial_num not in self.devicesControls):
+                device = Device(data.serial_num, False)
+                controls = DevicesControls(device)
+                self.devicesControls[device.serial_num] = controls
+
+                self.devicesControls[device.serial_num].setData(data)
+
+                self.scene.add(controls.genPointClouds())
+            else:
+                self.devicesControls[data.serial_num].setData(data)
+
     def mainloop(self):
+        data = self.socket.update()
+        self.onClientDataRecv(data)
+
         self.scene.startDraw()
 
         maps = []
-        serial_nums = []
-        for device in self.devicesControls:
-
+        for key in self.devicesControls:
+            device = self.devicesControls[key]
             color_image, depth_colormap = device.updateFrames()
 
             maps.append([color_image, depth_colormap])
-            serial_nums.append(device.getInfo())
             if(self.uiControls.getCalibrationMode()):
                 device.calibration()
 
-            # update qt image box
+        if(len(self.devicesControls.keys()) > 0):
             self.uiControls.setImage(maps)
-            self.uiControls.setList(serial_nums)
+            self.uiControls.setList(self.devicesControls.keys())
 
         self.scene.endDraw()
 

@@ -23,11 +23,10 @@ depthBox = QtcvImage(ui.depth)
 
 def mainloop():
     data = socket.getInputs()
-
     if(data != None):
         dataFromated = RealsenseData().fromArr(data)
         colorBox.setImage(dataFromated.color)
-        depthBox.setImage(dataFromated.depth)
+        #depthBox.setImage(dataFromated.depth)
     pass
 
 

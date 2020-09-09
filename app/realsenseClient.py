@@ -43,16 +43,19 @@ class RealsenseDevice():
 
         if(self.hardwareApis != None):
 
-            color_image, depth_colormap, depthValues = self.hardwareApis.getFrames()
+            _, _, _ = self.hardwareApis.getFrames()
 
+            data.serial_num = self.hardwareApis.serial_num
+            data.depth_scale = self.hardwareApis.depth_scale
             data.w = self.hardwareApis.w
             data.h = self.hardwareApis.h
             data.fx = self.hardwareApis.intr.fx
             data.fy = self.hardwareApis.intr.fy
             data.ppx = self.hardwareApis.intr.ppx
             data.ppy = self.hardwareApis.intr.ppy
-            data.color = color_image
-            data.depth = depth_colormap
+            data.color = self.hardwareApis.color_image
+            data.depth = self.hardwareApis.depth_image
+
         self.socket.send(data)
 
     def log(self):
@@ -88,10 +91,6 @@ RealsenseDevices = []
 for device in connected_devices:
     RealsenseDevices.append(RealsenseDevice(device))
 
-# testing
-RealsenseDevices.append(RealsenseDevice())
-RealsenseDevices.append(RealsenseDevice())
-
 ui.statusbar.showMessage(
     "Find {0} realsense(s).".format(len(RealsenseDevices)))
 
@@ -103,7 +102,7 @@ def mainloop():
 
 timer = QTimer(MainWindow)
 timer.timeout.connect(mainloop)
-timer.start(1)
+timer.start(5)
 
 MainWindow.show()
 app.exec_()

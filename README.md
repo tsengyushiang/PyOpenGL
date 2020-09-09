@@ -10,6 +10,9 @@
 ```
 conda create -n Pyopengl3.7 python=3.7
 conda activate Pyopengl3.7
+
+pip install dotmap
+
 conda install -c anaconda numpy
 conda install -c conda-forge opencv
 
