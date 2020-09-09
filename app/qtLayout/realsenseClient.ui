@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>621</width>
-    <height>386</height>
+    <width>592</width>
+    <height>322</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -16,23 +16,27 @@
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout">
     <item row="0" column="0">
-     <layout class="QVBoxLayout" name="verticalLayout" stretch="3,7">
+     <layout class="QHBoxLayout" name="horizontalLayout" stretch="5,5">
       <item>
-       <widget class="QTableView" name="tableView"/>
+       <layout class="QVBoxLayout" name="verticalLayout_2">
+        <item>
+         <widget class="QTableView" name="tableView"/>
+        </item>
+       </layout>
       </item>
       <item>
-       <layout class="QHBoxLayout" name="horizontalLayout">
+       <layout class="QVBoxLayout" name="verticalLayout">
         <item>
-         <widget class="QLabel" name="label_2">
+         <widget class="QLabel" name="color">
           <property name="text">
-           <string>colorMap</string>
+           <string>TextLabel</string>
           </property>
          </widget>
         </item>
         <item>
-         <widget class="QLabel" name="label">
+         <widget class="QLabel" name="depth">
           <property name="text">
-           <string>depthMap</string>
+           <string>TextLabel</string>
           </property>
          </widget>
         </item>
@@ -47,7 +51,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>621</width>
+     <width>592</width>
      <height>21</height>
     </rect>
    </property>

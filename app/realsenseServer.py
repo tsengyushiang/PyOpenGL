@@ -17,8 +17,8 @@ ui.setupUi(MainWindow)
 socket = Server(8002)
 ui.statusbar.showMessage(socket.log)
 
-colorBox = QtcvImage(ui.label)
-depthBox = QtcvImage(ui.label_2)
+colorBox = QtcvImage(ui.color)
+depthBox = QtcvImage(ui.depth)
 
 
 def mainloop():
