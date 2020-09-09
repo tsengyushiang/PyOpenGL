@@ -3,7 +3,7 @@ import cv2
 import datetime
 import os
 
-from qtLayout.fourRealsense import *
+from qtLayout.RealsenseApp import *
 from PyQt5.QtCore import *
 
 from Aruco.Aruco import ArucoInstance
@@ -36,6 +36,13 @@ class UIControls():
         self.MainWindow = MainWindow
         self.ui.setupUi(self.MainWindow)
 
+        self.imgBlocks = [
+            [QtcvImage(ui.color), QtcvImage(ui.depth)]
+        ]
+
+        self.selectDevice = 0
+        self.listData = []
+
     def getCanvas(self):
         return self.ui.openGLWidget
 
@@ -50,6 +57,38 @@ class UIControls():
         neg[2] = self.ui.negZ.value()/10
         return pos, neg
 
+    def setImage(self, maps):
+
+        color = maps[self.selectDevice][0]
+        depth = maps[self.selectDevice][1]
+
+        self.imgBlocks[0][0].setImage(color)
+        self.imgBlocks[0][1].setImage(depth)
+
+    def getCalibrationMode(self):
+        return self.ui.checkBox.checkState() != 0
+
+    def listClicked(self, qModelIndex):
+        print(qModelIndex.row())
+
+    def setList(self, qList):
+        if(self.listData == qList):
+            return
+        self.listData = qList
+        # 例項化列表模型，新增資料
+        slm = QStringListModel()
+
+        # 設定模型列表檢視，載入資料列表
+        slm.setStringList(qList)
+
+        # 設定列表檢視的模型
+        self.ui.listView.setModel(slm)
+        self.ui.listView.setEditTriggers(
+            QtWidgets.QAbstractItemView.NoEditTriggers)
+
+        # 單擊觸發自定義的槽函式
+        self.ui.listView.clicked.connect(self.listClicked)
+
 
 class DevicesControls():
     def __init__(self, hardware):
@@ -62,6 +101,9 @@ class DevicesControls():
         self.color_image = None
         self.depth_colormap = None
         self.depthValues = None
+
+    def getInfo(self):
+        return self.device.serial_num
 
     def start(self):
         self.device.start()
@@ -200,13 +242,6 @@ class App():
         self.scene = QtGLScene(self.uiControls.getCanvas())
         self.scene.customRender.append(self.customPaint)
 
-        self.imgBlocks = [
-            [QtcvImage(ui.label00), QtcvImage(ui.label01)],
-            [QtcvImage(ui.label10), QtcvImage(ui.label11)],
-            [QtcvImage(ui.label20), QtcvImage(ui.label21)],
-            [QtcvImage(ui.label30), QtcvImage(ui.label31)]
-        ]
-        self.calibrationCheckBox = ui.checkBox
         MainWindow.show()
 
         # window create init opengl
@@ -238,15 +273,21 @@ class App():
 
     def mainloop(self):
         self.scene.startDraw()
+
+        maps = []
+        serial_nums = []
         for device in self.devicesControls:
 
             color_image, depth_colormap = device.updateFrames()
-            if(self.calibrationCheckBox.checkState() != 0):
+
+            maps.append([color_image, depth_colormap])
+            serial_nums.append(device.getInfo())
+            if(self.uiControls.getCalibrationMode()):
                 device.calibration()
 
             # update qt image box
-            self.imgBlocks[0][0].setImage(color_image)
-            self.imgBlocks[0][1].setImage(depth_colormap)
+            self.uiControls.setImage(maps)
+            self.uiControls.setList(serial_nums)
 
         self.scene.endDraw()
 

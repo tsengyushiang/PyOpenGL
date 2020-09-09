@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>672</width>
-    <height>421</height>
+    <width>666</width>
+    <height>412</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -176,45 +176,58 @@
          <item>
           <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="5,5">
            <item>
-            <layout class="QVBoxLayout" name="verticalLayout_2" stretch="5,0,5,5,20,20">
+            <layout class="QVBoxLayout" name="verticalLayout_2" stretch="5,5,20,20">
              <item>
-              <layout class="QHBoxLayout" name="horizontalLayout_3">
+              <layout class="QHBoxLayout" name="horizontalLayout_3" stretch="0,0,0,0">
                <item>
                 <widget class="QLabel" name="label_6">
                  <property name="text">
-                  <string>{IP}:{PORT} ↓</string>
+                  <string>IP:</string>
                  </property>
                 </widget>
                </item>
+               <item>
+                <widget class="QLineEdit" name="lineEdit"/>
+               </item>
+               <item>
+                <widget class="QLabel" name="label_4">
+                 <property name="text">
+                  <string>Port:</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLineEdit" name="lineEdit_2"/>
+               </item>
               </layout>
-             </item>
-             <item>
-              <widget class="QLineEdit" name="lineEdit"/>
              </item>
              <item>
               <layout class="QHBoxLayout" name="horizontalLayout_4">
                <item>
                 <widget class="QRadioButton" name="radioButton_2">
                  <property name="text">
-                  <string>server</string>
+                  <string>server+local</string>
                  </property>
                 </widget>
                </item>
                <item>
                 <widget class="QRadioButton" name="radioButton">
                  <property name="text">
-                  <string>client</string>
+                  <string>client+local</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QRadioButton" name="radioButton_3">
+                 <property name="text">
+                  <string>local</string>
+                 </property>
+                 <property name="checked">
+                  <bool>true</bool>
                  </property>
                 </widget>
                </item>
               </layout>
-             </item>
-             <item>
-              <widget class="QPushButton" name="pushButton_2">
-               <property name="text">
-                <string>start/stop socket</string>
-               </property>
-              </widget>
              </item>
              <item>
               <widget class="QLabel" name="color">
@@ -256,7 +269,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>672</width>
+     <width>666</width>
      <height>21</height>
     </rect>
    </property>
