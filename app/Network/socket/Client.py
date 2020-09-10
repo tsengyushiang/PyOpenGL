@@ -22,7 +22,7 @@ class Client:
         size = len(dataByte)
         num_of_segments = int(math.ceil(size/(MAX_IMAGE_DGRAM)))
         array_pos_start = 0
-
+        print(size)
         while num_of_segments:
             array_pos_end = min(size, array_pos_start + MAX_IMAGE_DGRAM)
             self.sock.sendto(

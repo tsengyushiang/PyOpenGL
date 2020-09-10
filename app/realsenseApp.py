@@ -71,9 +71,10 @@ class UIControls():
         return self.ui.checkBox.checkState() != 0
 
     def listClicked(self, qModelIndex):
-        print(qModelIndex.row())
+        self.selectDevice=qModelIndex.row()
 
-    def setList(self, qList):
+    def setList(self, deviceDictKeys):
+        qList = list(deviceDictKeys)
         if(self.listData == qList):
             return
         self.listData = qList
@@ -232,8 +233,8 @@ class App():
 
     def initDevices(self):
         # setUp realsense
-        #connected_devices = GetAllRealsenses()
-        connected_devices = []
+        connected_devices = GetAllRealsenses()
+        #connected_devices = []
         self.devicesControls = {}
 
         # Start streaming from cameras

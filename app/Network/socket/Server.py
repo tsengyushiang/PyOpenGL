@@ -14,6 +14,7 @@ class Server:
         hostname = socket.gethostname()
         self.ip = socket.gethostbyname(hostname)
         self.port = port
+        print("{0}:{1}".format(self.ip,self.port))
 
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
