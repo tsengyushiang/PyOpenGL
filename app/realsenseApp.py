@@ -71,7 +71,7 @@ class UIControls():
         return self.ui.checkBox.checkState() != 0
 
     def listClicked(self, qModelIndex):
-        self.selectDevice=qModelIndex.row()
+        self.selectDevice = qModelIndex.row()
 
     def setList(self, deviceDictKeys):
         qList = list(deviceDictKeys)
@@ -342,7 +342,8 @@ class App():
         saveRootPath = os.path.join(path, currentTimeStr)
         os.mkdir(saveRootPath)
 
-        for deviceControls in self.devicesControls:
+        for keys in self.devicesControls:
+            deviceControls = self.devicesControls[keys]
             device = deviceControls.device
             device.saveFrames(saveRootPath)
             serial_num = device.serial_num
