@@ -29,6 +29,9 @@ import FileIO.json as json
 import shaders.realsensePointCloud as myShader
 
 from Args.singleModelAndTexture import build_argparser
+
+from scipy.spatial.transform import Rotation
+
 args = build_argparser().parse_args()
 
 
@@ -44,6 +47,8 @@ class UIControls():
 
         self.selectDevice = 0
         self.listData = []
+        self.camPosData = []
+        self.camRotData = []
 
     def getCanvas(self):
         return self.ui.openGLWidget
@@ -70,8 +75,21 @@ class UIControls():
     def getCalibrationMode(self):
         return self.ui.checkBox.checkState() != 0
 
+
     def listClicked(self, qModelIndex):
         print(qModelIndex.row())
+        self.selectDevice = qModelIndex.row()
+        self.setScrollBar()
+
+    def setCamPosData(self,poscamera):
+        if(self.camPosData == poscamera):
+            return
+        self.camPosData = poscamera
+    
+    def setCamRotData(self,rotcamera):
+        if(self.camRotData == rotcamera):
+            return
+        self.camRotData = rotcamera
 
     def setList(self, qList):
         if(self.listData == qList):
@@ -91,6 +109,56 @@ class UIControls():
         # 單擊觸發自定義的槽函式
         self.ui.listView.clicked.connect(self.listClicked)
 
+    def setScrollBar(self):
+        maximum = self.ui.camPos_X.maximum()
+        maxDis = 5
+
+        pos = self.camPosData[self.selectDevice]
+        pos[0] = pos[0]*maximum/maxDis
+        pos[1] = pos[1]*maximum/maxDis
+        pos[2] = pos[2]*maximum/maxDis
+
+        self.ui.camPos_X.setValue(pos[0])
+        self.ui.camPos_Y.setValue(pos[1])
+        self.ui.camPos_Z.setValue(pos[2])
+        
+        self.ui.camPosLabel_X.setText(str(pos[0]))
+        self.ui.camPosLabel_Y.setText(str(pos[1]))
+        self.ui.camPosLabel_Z.setText(str(pos[2]))
+
+        rot = self.camRotData[self.selectDevice]
+        self.ui.camRot_X.setValue(rot[0])
+        self.ui.camRot_Y.setValue(rot[1])
+        self.ui.camRot_Z.setValue(rot[2])
+
+        self.ui.camRotLabel_X.setText(str(rot[0]))
+        self.ui.camRotLabel_Y.setText(str(rot[1]))
+        self.ui.camRotLabel_Z.setText(str(rot[2]))
+
+    def getUIPos(self):
+        maximum = self.ui.camPos_X.maximum()
+        maxDis = 5
+        pos = [0, 0, 0]
+        pos[0] = self.ui.camPos_X.value()/maximum*maxDis
+        pos[1] = self.ui.camPos_Y.value()/maximum*maxDis
+        pos[2] = self.ui.camPos_Z.value()/maximum*maxDis
+        if(pos != self.camPosData[self.selectDevice]):        
+            self.ui.camPosLabel_X.setText(str(pos[0]))
+            self.ui.camPosLabel_Y.setText(str(pos[1]))
+            self.ui.camPosLabel_Z.setText(str(pos[2]))
+        return pos
+
+    def getUIRot(self):
+        rot = [0, 0, 0]
+        rot[0] = self.ui.camRot_X.value()
+        rot[1] = self.ui.camRot_Y.value()
+        rot[2] = self.ui.camRot_Z.value()
+        if(rot != self.camRotData[self.selectDevice]):        
+            self.ui.camRotLabel_X.setText(str(rot[0]))
+            self.ui.camRotLabel_Y.setText(str(rot[1]))
+            self.ui.camRotLabel_Z.setText(str(rot[2]))
+        return rot
+    
     def log(self, msg):
         self.ui.statusbar.showMessage(msg)
 
@@ -106,6 +174,8 @@ class DevicesControls():
         self.color_image = None
         self.depth_colormap = None
         self.depthValues = None
+        self.camPos = []
+        self.camRot = []
 
     def getInfo(self):
         return self.device.serial_num
@@ -121,6 +191,8 @@ class DevicesControls():
         texColor = Texture(np.full((h, w, 3), 0, dtype="uint8"))
         texDepth = Texture(np.full((h, w, 3), 255, dtype="uint8"))
         self.imgTexture = [texColor, texDepth]
+        self.camPos = [0,0,0]
+        self.camRot = [0,0,0] 
 
         # add scene
         self.uniform = Uniform()
@@ -168,9 +240,29 @@ class DevicesControls():
     def setData(self, data):
         self.device.setData(data)
 
-    def calibration(self):
-        corner1, middle, corner2, middle2, num = ArucoInstance.findMarkers(
-            self.color_image)
+    def getCamPos(self):
+        return self.camPos
+
+    def getCamRot(self):
+        return self.camRot
+
+    def calibration(self, pos,rot):
+        #print(pos)
+
+        self.camPos = pos
+        self.camRot = rot
+        
+        rotation = Rotation.from_euler('xyz', rot, degrees=True)
+
+        mat = rotation.as_matrix()
+        self.uniform.setValue('extrinct', np.array([
+                [mat[0][0], mat[0][1], mat[0][2], pos[0]],
+                [mat[1][0], mat[1][1], mat[1][2], pos[1]],
+                [mat[2][0], mat[2][1], mat[2][2], pos[2]],
+                [0, 0, 0, 1]
+            ]))
+        # corner1, middle, corner2, middle2, num = ArucoInstance.findMarkers(
+        #     self.color_image)
 
         def reset():
             self.uniform.setValue('extrinct', np.array([
@@ -181,40 +273,40 @@ class DevicesControls():
             ]))
             # print("calibration error")
 
-        if(num > 0):
-            markerPoint1 = self.device.pixel2point(corner1)
-            markerPointMiddle = self.device.pixel2point(middle)
-            markerPoint2 = self.device.pixel2point(corner2)
-            markerPointMiddle2 = self.device.pixel2point(middle2)
+        # if(num > 0):
+        #     markerPoint1 = self.device.pixel2point(corner1)
+        #     markerPointMiddle = self.device.pixel2point(middle)
+        #     markerPoint2 = self.device.pixel2point(corner2)
+        #     markerPointMiddle2 = self.device.pixel2point(middle2)
 
-            centerPoint = (markerPoint1+markerPointMiddle +
-                           markerPoint2+markerPointMiddle2)/4
+        #     centerPoint = (markerPoint1+markerPointMiddle +
+        #                    markerPoint2+markerPointMiddle2)/4
 
-            edge1 = markerPoint1-markerPointMiddle
-            edge2 = markerPoint2-markerPointMiddle
+        #     edge1 = markerPoint1-markerPointMiddle
+        #     edge2 = markerPoint2-markerPointMiddle
 
-            x = edge1 / np.linalg.norm(edge1)
-            z = edge2 / np.linalg.norm(edge2)
-            y = np.array([
-                x[1]*z[2]-x[2]*z[1],
-                x[2]*z[0]-x[0]*z[2],
-                x[0]*z[1]-x[1]*z[0],
-            ])
+        #     x = edge1 / np.linalg.norm(edge1)
+        #     z = edge2 / np.linalg.norm(edge2)
+        #     y = np.array([
+        #         x[1]*z[2]-x[2]*z[1],
+        #         x[2]*z[0]-x[0]*z[2],
+        #         x[0]*z[1]-x[1]*z[0],
+        #     ])
 
-            coordMarker = np.array([
-                [x[0], -y[0], z[0], centerPoint[0]],
-                [x[1], -y[1], z[1], centerPoint[1]],
-                [x[2], -y[2], z[2], centerPoint[2]],
-                [0, 0, 0, 1.0]
-            ])
+        #     coordMarker = np.array([
+        #         [x[0], -y[0], z[0], centerPoint[0]],
+        #         [x[1], -y[1], z[1], centerPoint[1]],
+        #         [x[2], -y[2], z[2], centerPoint[2]],
+        #         [0, 0, 0, 1.0]
+        #     ])
 
-            try:
-                inverCoordMarker = np.linalg.inv(coordMarker)
-                self.uniform.setValue('extrinct', inverCoordMarker)
-            except:
-                reset()
-        else:
-            reset()
+        #     try:
+        #         inverCoordMarker = np.linalg.inv(coordMarker)
+        #         self.uniform.setValue('extrinct', inverCoordMarker)
+        #     except:
+        #         reset()
+        # else:
+        #     reset()
 
     def updateBoundary(self, pos, neg):
         if(self.uniform):
@@ -232,8 +324,8 @@ class App():
 
     def initDevices(self):
         # setUp realsense
-        #connected_devices = GetAllRealsenses()
-        connected_devices = []
+        connected_devices = GetAllRealsenses()
+        #connected_devices = []
         self.devicesControls = {}
 
         # Start streaming from cameras
@@ -247,6 +339,7 @@ class App():
         app = QtWidgets.QApplication(sys.argv)
         MainWindow = QtWidgets.QMainWindow()
         ui = Ui_MainWindow()
+
         self.uiControls = UIControls(ui, MainWindow)
         ui.pushButton.clicked.connect(self.save)
 
@@ -316,17 +409,28 @@ class App():
         self.scene.startDraw()
 
         maps = []
+        allcamPos = []
+        allcamRot = []
+
         for key in self.devicesControls:
             device = self.devicesControls[key]
             color_image, depth_colormap = device.updateFrames()
-
             maps.append([color_image, depth_colormap])
-            if(self.uiControls.getCalibrationMode()):
-                device.calibration()
+            
+            allcamPos.append(device.getCamPos());
+            allcamRot.append(device.getCamRot());
+
+        if(self.uiControls.getCalibrationMode()):
+            device = self.devicesControls[list(self.devicesControls)[self.uiControls.selectDevice]]
+            pos = self.uiControls.getUIPos()
+            rot = self.uiControls.getUIRot()
+            device.calibration(pos,rot)
 
         if(len(self.devicesControls.keys()) > 0):
             self.uiControls.setImage(maps)
             self.uiControls.setList(self.devicesControls.keys())
+            self.uiControls.setCamPosData(allcamPos)
+            self.uiControls.setCamRotData(allcamRot)
 
         self.scene.endDraw()
         self.uiControls.log("Find {0} realsense(s).".format(
