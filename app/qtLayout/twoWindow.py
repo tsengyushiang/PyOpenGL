@@ -14,18 +14,20 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(800, 459)
+        MainWindow.resize(674, 408)
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
+        self.gridLayout = QtWidgets.QGridLayout(self.centralwidget)
+        self.gridLayout.setObjectName("gridLayout")
         self.openGLWidget = QtWidgets.QOpenGLWidget(self.centralwidget)
-        self.openGLWidget.setGeometry(QtCore.QRect(10, 10, 411, 401))
         self.openGLWidget.setObjectName("openGLWidget")
+        self.gridLayout.addWidget(self.openGLWidget, 0, 0, 1, 1)
         self.openGLWidget_2 = QtWidgets.QOpenGLWidget(self.centralwidget)
-        self.openGLWidget_2.setGeometry(QtCore.QRect(430, 10, 361, 401))
         self.openGLWidget_2.setObjectName("openGLWidget_2")
+        self.gridLayout.addWidget(self.openGLWidget_2, 0, 1, 1, 1)
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
-        self.menubar.setGeometry(QtCore.QRect(0, 0, 800, 21))
+        self.menubar.setGeometry(QtCore.QRect(0, 0, 674, 21))
         self.menubar.setObjectName("menubar")
         MainWindow.setMenuBar(self.menubar)
         self.statusbar = QtWidgets.QStatusBar(MainWindow)
@@ -37,7 +39,7 @@ class Ui_MainWindow(object):
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
-        MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
+        MainWindow.setWindowTitle(_translate("MainWindow", "Qt5+PyOpenGL"))
 
 
 if __name__ == "__main__":

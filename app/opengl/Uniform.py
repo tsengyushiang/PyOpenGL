@@ -63,6 +63,7 @@ class Uniform:
 
     def update(self, shader):
         for texture in self.textures:
+            texture[1].activate()
             location = glGetUniformLocation(shader, texture[0])
             glUniform1i(location, texture[1].id)
 

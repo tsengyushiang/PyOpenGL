@@ -23,10 +23,17 @@ ui.setupUi(MainWindow)
 scene = QtGLScene(ui.openGLWidget)
 scene2 = QtGLScene(ui.openGLWidget_2)
 
+
+def mainloop():
+    scene.startDraw()
+    scene.endDraw()
+    scene2.startDraw()
+    scene2.endDraw()
+
+
 MainWindow.show()
 timer = QTimer(MainWindow)
-timer.timeout.connect(scene.update)
-timer.timeout.connect(scene2.update)
+timer.timeout.connect(mainloop)
 timer.start(1)
 
 # uniform
