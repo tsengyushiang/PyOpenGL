@@ -1,4 +1,4 @@
-from Args.singleModelAndTexture import build_argparser
+from Args.realsense import build_argparser
 import sys
 import cv2
 import datetime
@@ -317,8 +317,11 @@ class App():
 
     def initDevices(self):
         # setUp realsense
-        #connected_devices = GetAllRealsenses()
-        connected_devices = []
+        print(args.localDevice)
+        if(args.localDevice != 0):
+            connected_devices = GetAllRealsenses()
+        else:
+            connected_devices = []
         self.devicesControls = {}
 
         # Start streaming from cameras
@@ -406,7 +409,6 @@ class App():
     def mainloop(self):
 
         if(self.socket != None):
-
             if(self.socket.type == Socket.SERVER):
                 latestBytes = self.socket.getLatestBytes()
                 for dataBytes in latestBytes:
