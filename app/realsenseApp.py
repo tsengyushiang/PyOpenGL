@@ -1,3 +1,4 @@
+from Args.singleModelAndTexture import build_argparser
 import sys
 import cv2
 import datetime
@@ -9,6 +10,8 @@ from PyQt5.QtCore import *
 from Aruco.Aruco import ArucoInstance
 
 from Network.socket.Server import Server
+from Network.socket.Client import Client
+from Network.socket.Enum import Socket
 from Network.data.RealsenseData import RealsenseData
 
 from Realsense.device import *
@@ -28,7 +31,6 @@ import FileIO.json as json
 
 import shaders.realsensePointCloud as myShader
 
-from Args.singleModelAndTexture import build_argparser
 args = build_argparser().parse_args()
 
 
@@ -44,6 +46,25 @@ class UIControls():
 
         self.selectDevice = 0
         self.listData = []
+
+        self.ui.radioButton.clicked.connect(
+            self.radioButtonChecked(Socket.CLIENT))
+        self.ui.radioButton_2.clicked.connect(
+            self.radioButtonChecked(Socket.SERVER))
+        self.ui.radioButton_3.clicked.connect(
+            self.radioButtonChecked(Socket.LOCAL))
+
+        def doNothing():
+            pass
+
+        def setIpPort(ip, port):
+            return ip, port
+
+        def getIpPort(port):
+            return '127.0.0.1', port
+        self.onServerButtonClick = getIpPort
+        self.onClientButtonClick = setIpPort
+        self.onLocalButtonClick = doNothing
 
     def getCanvas(self):
         return self.ui.openGLWidget
@@ -94,6 +115,28 @@ class UIControls():
 
     def log(self, msg):
         self.ui.statusbar.showMessage(msg)
+
+    def radioButtonChecked(self, index):
+
+        def click():
+
+            try:
+                if index == Socket.SERVER:
+                    port = int(self.ui.lineEdit_2.text())
+                    ip, port = self.onServerButtonClick(port)
+                    self.ui.lineEdit.setText(ip)
+                    self.ui.lineEdit_2.setText(port)
+                elif index == Socket.CLIENT:
+                    ip = self.ui.lineEdit.text()
+                    port = int(self.ui.lineEdit_2.text())
+                    self.onClientButtonClick(ip, port)
+                elif index == Socket.LOCAL:
+                    self.onLocalButtonClick()
+            except:
+                pass
+                # input error
+
+        return click
 
 
 class DevicesControls():
@@ -169,6 +212,26 @@ class DevicesControls():
     def setData(self, data):
         self.device.setData(data)
 
+    def getData(self):
+        data = RealsenseData()
+
+        if(self.device != None):
+
+            _, _, _ = self.device.getFrames()
+
+            data.serial_num = self.device.serial_num
+            data.depth_scale = self.device.depth_scale
+            data.w = self.device.w
+            data.h = self.device.h
+            data.fx = self.device.intr.fx
+            data.fy = self.device.intr.fy
+            data.ppx = self.device.intr.ppx
+            data.ppy = self.device.intr.ppy
+            data.color = self.device.color_image
+            data.depth = self.device.depth_image
+
+        return data
+
     def calibration(self):
         corner1, middle, corner2, middle2, num = ArucoInstance.findMarkers(
             self.color_image)
@@ -226,15 +289,36 @@ class DevicesControls():
 class App():
     def __init__(self):
         self.initDevices()
-        self.socket = Server(8002)
+
+        self.socket = None
 
         self.initQtwindow()
+
         self.pos, self.neg = [1, 1, 1], [-1, -1, -1]
+
+    def stopSocket(self):
+        if(self.socket != None):
+            self.socket.stop()
+            self.socket = None
+
+    def startServer(self, port):
+        self.stopSocket()
+        self.socket = Server(port)
+        return self.socket.ip, self.socket.port
+
+    def startClient(self, ip, port):
+        self.stopSocket()
+        self.socket = Client(ip, port)
+
+    def initSocketBtns(self):
+        self.uiControls.onServerButtonClick = self.startServer
+        self.uiControls.onClientButtonClick = self.startClient
+        self.uiControls.onLocalButtonClick = self.stopSocket
 
     def initDevices(self):
         # setUp realsense
-        connected_devices = GetAllRealsenses()
-        #connected_devices = []
+        #connected_devices = GetAllRealsenses()
+        connected_devices = []
         self.devicesControls = {}
 
         # Start streaming from cameras
@@ -256,6 +340,8 @@ class App():
 
         MainWindow.show()
         MainWindow.destroyed.connect(self.programEnd)
+
+        self.initSocketBtns()
 
         # window create init opengl
         pointclouds = []
@@ -279,7 +365,7 @@ class App():
             device = self.devicesControls[key]
             device.device.stop()
 
-        self.socket.stop()
+        self.stopSocket()
 
     def monitorScrollBar(self):
 
@@ -314,10 +400,21 @@ class App():
             # packgae decode error
             pass
 
+    def sendData2Socket(self, data):
+        self.socket.send(data)
+
     def mainloop(self):
-        latestBytes = self.socket.getLatestBytes()
-        for dataBytes in latestBytes:
-            self.onClientDataRecv(dataBytes)
+
+        if(self.socket != None):
+
+            if(self.socket.type == Socket.SERVER):
+                latestBytes = self.socket.getLatestBytes()
+                for dataBytes in latestBytes:
+                    self.onClientDataRecv(dataBytes)
+            elif(self.socket.type == Socket.CLIENT):
+                for key in self.devicesControls:
+                    device = self.devicesControls[key]
+                    self.sendData2Socket(device.getData())
 
         self.scene.startDraw()
 

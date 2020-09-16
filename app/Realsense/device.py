@@ -81,6 +81,32 @@ class Device:
         self.depth_colormap = data.depthMap
         self.depthValues = data.depth*data.depth_scale
 
+    def getFrames8bits(self, maxMeter):
+        if(self.pipeline):
+            frames = self.pipeline.wait_for_frames()
+            frames = self.align.process(frames)
+            depth_frame = frames.get_depth_frame()
+            color_frame = frames.get_color_frame()
+
+            if not depth_frame or not color_frame:
+                print(self.serial_num, 'retrieve frame error !!')
+                return None, None, None
+
+            self.color_image = np.asanyarray(color_frame.get_data())
+
+            self.depth_image = np.asanyarray(
+                depth_frame.get_data())*self.depth_scale
+
+            depth_image8bit = cv2.convertScaleAbs(
+                self.depth_image, alpha=255/maxMeter)
+
+            self.depth_colormap = cv2.applyColorMap(
+                depth_image8bit, cv2.COLORMAP_JET)
+
+            self.depthValues = depth_image8bit/(255/maxMeter)
+
+        return self.color_image, self.depth_colormap, self.depthValues.flatten()
+
     def getFrames(self):
 
         if(self.pipeline):

@@ -1,10 +1,12 @@
 import socket
 import struct
 import math
+from .Enum import Socket
 
 
 class Client:
     def __init__(self, ip, port):
+        self.type = Socket.CLIENT
         self.ip = ip
         self.port = port
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)

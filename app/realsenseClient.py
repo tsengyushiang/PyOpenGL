@@ -36,7 +36,7 @@ class RealsenseDevice():
         self.hardwareApis = hardwareApis
         if(hardwareApis != None):
             self.hardwareApis.start()
-        self.socket = Client("140.118.127.121", 8002)
+        self.socket = Client("192.168.50.105", 8002)
 
     def sendNetWorkData(self):
         data = RealsenseData()

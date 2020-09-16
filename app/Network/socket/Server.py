@@ -4,17 +4,17 @@ import struct
 import numpy as np
 from _pickle import dumps, loads
 import threading
-
+from .Enum import Socket
 # ref : https://medium.com/@fromtheast/fast-camera-live-streaming-with-udp-opencv-de2f84c73562
 
 
 class Server:
     def __init__(self, port):
-
+        self.type = Socket.SERVER
         hostname = socket.gethostname()
         self.ip = socket.gethostbyname(hostname)
         self.port = port
-        print("{0}:{1}".format(self.ip,self.port))
+        print("{0}:{1}".format(self.ip, self.port))
 
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
