@@ -158,9 +158,9 @@ class DevicesControls():
         self.device.start()
 
     def genPointClouds(self):
-        h = self.device.h
-        w = self.device.w
-        intr = self.device.intr
+        h = self.device.colorH
+        w = self.device.colorW
+        intr = self.device.colorIntr
 
         texColor = Texture(np.ones((h, w, 3)))
         texDepth = Texture(np.ones((h, w, 3)))
@@ -221,8 +221,8 @@ class DevicesControls():
 
             data.serial_num = self.device.serial_num
             data.depth_scale = self.device.depth_scale
-            data.w = self.device.w
-            data.h = self.device.h
+            data.w = self.device.depthW
+            data.h = self.device.depthH
             data.fx = self.device.intr.fx
             data.fy = self.device.intr.fy
             data.ppx = self.device.intr.ppx
@@ -417,7 +417,7 @@ class App():
                 for key in self.devicesControls:
                     device = self.devicesControls[key]
                     self.sendData2Socket(device.getData())
-
+        
         self.scene.startDraw()
 
         maps = []
@@ -455,7 +455,7 @@ class App():
             mat4 = deviceControls.uniform.getValue('extrinct')
 
             clipPoints = []
-            for points in device.getPoints().reshape(device.h*device.w, 3):
+            for points in device.getPoints().reshape(device.colorH*device.colorW, 3):
                 vec = np.array([points[0], points[1], points[2], 1.0])
                 alignedVec = mat4.dot(vec)
 
@@ -474,12 +474,18 @@ class App():
                                               serial_num+'.clipPointClouds'+'.ply'))
 
             config = {
-                'intr': {
-                    'fx': device.intr.fx,
-                    'fy': device.intr.fy,
-                    'ppx': device.intr.ppx,
-                    'ppy': device.intr.ppy
-                },
+                'depth_fx': device.intr.fx,
+                'depth_fy': device.intr.fy,
+                'depth_cx': device.intr.ppx,
+                'depth_cy': device.intr.ppy,
+                'depth_width': device.depthW,
+                'depth_height': device.depthH,
+                'RGB_fx': device.colorIntr.fx,
+                'RGB_fy': device.colorIntr.fy,
+                'RGB_cx': device.colorIntr.ppx,
+                'RGB_cy': device.colorIntr.ppy,
+                'RGB_width': device.colorW,
+                'RGB_height': device.colorH,
                 'extr': mat4,
             }
 

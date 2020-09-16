@@ -21,8 +21,11 @@ class Device:
     def __init__(self, serial_num, isPhysic=True):
         print('create Realsense', serial_num)
         self.serial_num = serial_num
-        self.w = 640
-        self.h = 480
+
+        self.depthW = 1280
+        self.depthH = 720
+        self.colorW = 1920
+        self.colorH = 1080
 
         self.pipeline = None
         if(isPhysic):
@@ -33,9 +36,9 @@ class Device:
         self.config = rs.config()
         self.config.enable_device(self.serial_num)
         self.config.enable_stream(
-            rs.stream.depth, self.w, self.h, rs.format.z16, 30)
+            rs.stream.depth, self.depthW, self.depthH, rs.format.z16, 30)
         self.config.enable_stream(
-            rs.stream.color, self.w, self.h, rs.format.bgr8, 30)
+            rs.stream.color, self.colorW, self.colorH, rs.format.bgr8, 30)
 
         # align color and depth
         align_to = rs.stream.color
@@ -50,6 +53,8 @@ class Device:
             self.intr = profile.as_video_stream_profile().get_intrinsics()
             # print(self.intr.ppx, self.intr.ppy, self.intr.fx, self.intr.fy)
             # print(self.intr.coeffs)
+            profileColor = cfg.get_stream(rs.stream.color)
+            self.colorIntr = profileColor.as_video_stream_profile().get_intrinsics()
 
             depth_sensor = cfg.get_device().first_depth_sensor()
             self.depth_scale = depth_sensor.get_depth_scale()
@@ -75,8 +80,8 @@ class Device:
         self.intr.ppy = data.ppy
         self.intr.fx = data.fx
         self.intr.fy = data.fy
-        self.w = data.w
-        self.h = data.h
+        self.depthW = data.w
+        self.depthH = data.h
         self.color_image = data.color
         self.depth_colormap = data.depthMap
         self.depthValues = data.depth*data.depth_scale
@@ -111,9 +116,14 @@ class Device:
 
         if(self.pipeline):
             frames = self.pipeline.wait_for_frames()
-            frames = self.align.process(frames)
-            depth_frame = frames.get_depth_frame()
-            color_frame = frames.get_color_frame()
+            aligned_frames = self.align.process(frames)
+
+            # aligned_depth_frame is a 640x480 depth image
+            depth_frame = aligned_frames.get_depth_frame()
+            color_frame = aligned_frames.get_color_frame()
+
+            #depth_frame = frames.get_depth_frame()
+            #color_frame = frames.get_color_frame()
 
             if not depth_frame or not color_frame:
                 print(self.serial_num, 'retrieve frame error !!')
@@ -131,9 +141,11 @@ class Device:
 
     def getPoints(self):
         # calc point cloud
-        h = (np.arange(self.h, dtype=float)[::-1]-self.intr.ppy)/self.intr.fy
-        w = (np.arange(self.w, dtype=float)-self.intr.ppx)/self.intr.fx
-        points = np.empty((self.h, self.w, 3), dtype=float)
+        h = (np.arange(self.colorH, dtype=float)
+             [::-1]-self.colorIntr.ppy)/self.colorIntr.fy
+        w = (np.arange(self.colorW, dtype=float) -
+             self.colorIntr.ppx)/self.colorIntr.fx
+        points = np.empty((self.colorH, self.colorW, 3), dtype=float)
         points[:, :, 1] = h[:, None]*self.depthValues
         points[:, :, 0] = w*self.depthValues
         points[:, :, 2] = self.depthValues
@@ -143,6 +155,6 @@ class Device:
         self.getFrames()
 
         cv2.imwrite(
-            os.path.join(path, self.serial_num+'.depth'+'.png'), self.color_image)
+            os.path.join(path, self.serial_num+'.depth'+'.png'), self.depthValues.astype(np.uint16))
         cv2.imwrite(
-            os.path.join(path, self.serial_num+'.color'+'.png'), self.depth_colormap)
+            os.path.join(path, self.serial_num+'.color'+'.png'), self.color_image)
