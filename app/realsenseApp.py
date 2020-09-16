@@ -119,8 +119,8 @@ class DevicesControls():
         w = self.device.w
         intr = self.device.intr
 
-        texColor = Texture(np.full((h, w, 3), 0, dtype="uint8"))
-        texDepth = Texture(np.full((h, w, 3), 255, dtype="uint8"))
+        texColor = Texture(np.ones((h, w, 3)))
+        texDepth = Texture(np.ones((h, w, 3)))
         self.imgTexture = [texColor, texDepth]
 
         # add scene
@@ -258,9 +258,14 @@ class App():
         MainWindow.destroyed.connect(self.programEnd)
 
         # window create init opengl
+        pointclouds = []
         for key in self.devicesControls:
             device = self.devicesControls[key]
-            self.scene.add(device.genPointClouds())
+            pointclouds.append(device.genPointClouds())
+
+        # error occur if create after shader compile? !!
+        for pointcloud in pointclouds:
+            self.scene.add(pointcloud)
 
         timer = QTimer(MainWindow)
         timer.timeout.connect(self.mainloop)
