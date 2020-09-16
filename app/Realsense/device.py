@@ -22,10 +22,10 @@ class Device:
         print('create Realsense', serial_num)
         self.serial_num = serial_num
 
-        self.depthW = 1280
-        self.depthH = 720
-        self.colorW = 1920
-        self.colorH = 1080
+        self.depthW = 640
+        self.depthH = 480
+        self.colorW = 640
+        self.colorH = 480
 
         self.pipeline = None
         if(isPhysic):
@@ -68,8 +68,9 @@ class Device:
 
         depth = self.depthValues[int(coord[1])][int(coord[0])]
 
-        pointX = (coord[0]-self.intr.ppx)/self.intr.fx*depth
-        pointY = (self.h-coord[1]-self.intr.ppy)/self.intr.fy*depth
+        pointX = (coord[0]-self.colorIntr.ppx)/self.colorIntr.fx*depth
+        pointY = (self.colorH-coord[1] -
+                  self.colorIntr.ppy)/self.colorIntr.fy*depth
 
         return np.array([pointX, pointY, depth])
 
@@ -155,6 +156,8 @@ class Device:
         self.getFrames()
 
         cv2.imwrite(
-            os.path.join(path, self.serial_num+'.depth'+'.png'), self.depthValues.astype(np.uint16))
+            os.path.join(path, self.serial_num+'.depth16'+'.png'), self.depthValues.astype(np.uint16))
         cv2.imwrite(
             os.path.join(path, self.serial_num+'.color'+'.png'), self.color_image)
+        cv2.imwrite(
+            os.path.join(path, self.serial_num+'.depth'+'.png'), self.depth_colormap)

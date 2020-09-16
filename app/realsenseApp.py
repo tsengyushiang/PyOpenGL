@@ -417,7 +417,7 @@ class App():
                 for key in self.devicesControls:
                     device = self.devicesControls[key]
                     self.sendData2Socket(device.getData())
-        
+
         self.scene.startDraw()
 
         maps = []
@@ -446,6 +446,8 @@ class App():
         saveRootPath = os.path.join(path, currentTimeStr)
         os.mkdir(saveRootPath)
 
+        combineAllPcd = []
+        colorsAll = []
         for keys in self.devicesControls:
             deviceControls = self.devicesControls[keys]
             device = deviceControls.device
@@ -455,8 +457,14 @@ class App():
             mat4 = deviceControls.uniform.getValue('extrinct')
 
             clipPoints = []
-            for points in device.getPoints().reshape(device.colorH*device.colorW, 3):
+            colors = []
+
+            colorArr = device.color_image.flatten().reshape(device.colorH*device.colorW, 3)
+            pointArr = device.getPoints().reshape(device.colorH*device.colorW, 3)
+            for index, points in enumerate(pointArr):
+
                 vec = np.array([points[0], points[1], points[2], 1.0])
+
                 alignedVec = mat4.dot(vec)
 
                 if(self.pos[0] < alignedVec[0] or
@@ -467,13 +475,21 @@ class App():
                    self.neg[2] > alignedVec[2]):
                     continue
 
+                color = (colorArr[index][2], colorArr[index]
+                         [1], colorArr[index][1])
+                colorsAll.append(color)
+                colors.append(color)
+
+                combineAllPcd.append(
+                    (alignedVec[0], alignedVec[1], alignedVec[2]))
+
                 clipPoints.append(
                     (alignedVec[0], alignedVec[1], alignedVec[2]))
 
-            ply.save(clipPoints, os.path.join(saveRootPath,
-                                              serial_num+'.clipPointClouds'+'.ply'))
+            ply.save(clipPoints, colors, os.path.join(saveRootPath,
+                                                      serial_num+'.clipPointClouds'+'.ply'))
 
-            config = {
+            config={
                 'depth_fx': device.intr.fx,
                 'depth_fy': device.intr.fy,
                 'depth_cx': device.intr.ppx,
@@ -486,11 +502,16 @@ class App():
                 'RGB_cy': device.colorIntr.ppy,
                 'RGB_width': device.colorW,
                 'RGB_height': device.colorH,
-                'extr': mat4,
+                'calibrateMat': mat4,
+                'positiveBoundaryCorner': self.pos,
+                'negativeBoundaryCorner': self.neg
             }
 
             json.write(config, os.path.join(saveRootPath,
                                             serial_num+'.config.json'))
 
+        ply.save(combineAllPcd, colorsAll, os.path.join(saveRootPath,
+                                                        'combineAllPcd'+'.ply'))
 
-app = App()
+
+app=App()
