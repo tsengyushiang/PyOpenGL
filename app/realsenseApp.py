@@ -94,17 +94,16 @@ class UIControls():
     def getCalibrationMode(self):
         return self.ui.checkBox.checkState() != 0
 
-
     def listClicked(self, qModelIndex):
         self.selectDevice = qModelIndex.row()
         self.setScrollBar()
 
-    def setCamPosData(self,poscamera):
+    def setCamPosData(self, poscamera):
         if(self.camPosData == poscamera):
             return
         self.camPosData = poscamera
-    
-    def setCamRotData(self,rotcamera):
+
+    def setCamRotData(self, rotcamera):
         if(self.camRotData == rotcamera):
             return
         self.camRotData = rotcamera
@@ -140,7 +139,7 @@ class UIControls():
         self.ui.camPos_X.setValue(pos[0])
         self.ui.camPos_Y.setValue(pos[1])
         self.ui.camPos_Z.setValue(pos[2])
-        
+
         self.ui.camPosLabel_X.setText(str(pos[0]))
         self.ui.camPosLabel_Y.setText(str(pos[1]))
         self.ui.camPosLabel_Z.setText(str(pos[2]))
@@ -161,7 +160,7 @@ class UIControls():
         pos[0] = self.ui.camPos_X.value()/maximum*maxDis
         pos[1] = self.ui.camPos_Y.value()/maximum*maxDis
         pos[2] = self.ui.camPos_Z.value()/maximum*maxDis
-        if(pos != self.camPosData[self.selectDevice]):        
+        if(pos != self.camPosData[self.selectDevice]):
             self.ui.camPosLabel_X.setText(str(pos[0]))
             self.ui.camPosLabel_Y.setText(str(pos[1]))
             self.ui.camPosLabel_Z.setText(str(pos[2]))
@@ -172,12 +171,12 @@ class UIControls():
         rot[0] = self.ui.camRot_X.value()
         rot[1] = self.ui.camRot_Y.value()
         rot[2] = self.ui.camRot_Z.value()
-        if(rot != self.camRotData[self.selectDevice]):        
+        if(rot != self.camRotData[self.selectDevice]):
             self.ui.camRotLabel_X.setText(str(rot[0]))
             self.ui.camRotLabel_Y.setText(str(rot[1]))
             self.ui.camRotLabel_Z.setText(str(rot[2]))
         return rot
-    
+
     def log(self, msg):
         self.ui.statusbar.showMessage(msg)
 
@@ -232,8 +231,8 @@ class DevicesControls():
         texColor = Texture(np.ones((h, w, 3)))
         texDepth = Texture(np.ones((h, w, 3)))
         self.imgTexture = [texColor, texDepth]
-        self.camPos = [0,0,0]
-        self.camRot = [0,0,0] 
+        self.camPos = [0, 0, 0]
+        self.camRot = [0, 0, 0]
 
         # add scene
         self.uniform = Uniform()
@@ -283,7 +282,7 @@ class DevicesControls():
 
     def getCamPos(self):
         return self.camPos
-        
+
     def getData(self):
         data = RealsenseData()
 
@@ -304,27 +303,12 @@ class DevicesControls():
 
         return data
 
-
     def getCamRot(self):
         return self.camRot
 
-    def calibration(self, pos,rot):
-        #print(pos)
-
-        self.camPos = pos
-        self.camRot = rot
-        
-        rotation = Rotation.from_euler('xyz', rot, degrees=True)
-
-        mat = rotation.as_matrix()
-        self.uniform.setValue('extrinct', np.array([
-                [mat[0][0], mat[0][1], mat[0][2], pos[0]],
-                [mat[1][0], mat[1][1], mat[1][2], pos[1]],
-                [mat[2][0], mat[2][1], mat[2][2], pos[2]],
-                [0, 0, 0, 1]
-            ]))
-        # corner1, middle, corner2, middle2, num = ArucoInstance.findMarkers(
-        #     self.color_image)
+    def ArucoCalibration(self, nothing1, nothing2):
+        corner1, middle, corner2, middle2, num = ArucoInstance.findMarkers(
+            self.color_image)
 
         def reset():
             self.uniform.setValue('extrinct', np.array([
@@ -335,40 +319,55 @@ class DevicesControls():
             ]))
             # print("calibration error")
 
-        # if(num > 0):
-        #     markerPoint1 = self.device.pixel2point(corner1)
-        #     markerPointMiddle = self.device.pixel2point(middle)
-        #     markerPoint2 = self.device.pixel2point(corner2)
-        #     markerPointMiddle2 = self.device.pixel2point(middle2)
+        if(num > 0):
+            markerPoint1 = self.device.pixel2point(corner1)
+            markerPointMiddle = self.device.pixel2point(middle)
+            markerPoint2 = self.device.pixel2point(corner2)
+            markerPointMiddle2 = self.device.pixel2point(middle2)
 
-        #     centerPoint = (markerPoint1+markerPointMiddle +
-        #                    markerPoint2+markerPointMiddle2)/4
+            centerPoint = (markerPoint1+markerPointMiddle +
+                           markerPoint2+markerPointMiddle2)/4
 
-        #     edge1 = markerPoint1-markerPointMiddle
-        #     edge2 = markerPoint2-markerPointMiddle
+            edge1 = markerPoint1-markerPointMiddle
+            edge2 = markerPoint2-markerPointMiddle
 
-        #     x = edge1 / np.linalg.norm(edge1)
-        #     z = edge2 / np.linalg.norm(edge2)
-        #     y = np.array([
-        #         x[1]*z[2]-x[2]*z[1],
-        #         x[2]*z[0]-x[0]*z[2],
-        #         x[0]*z[1]-x[1]*z[0],
-        #     ])
+            x = edge1 / np.linalg.norm(edge1)
+            z = edge2 / np.linalg.norm(edge2)
+            y = np.array([
+                x[1]*z[2]-x[2]*z[1],
+                x[2]*z[0]-x[0]*z[2],
+                x[0]*z[1]-x[1]*z[0],
+            ])
 
-        #     coordMarker = np.array([
-        #         [x[0], -y[0], z[0], centerPoint[0]],
-        #         [x[1], -y[1], z[1], centerPoint[1]],
-        #         [x[2], -y[2], z[2], centerPoint[2]],
-        #         [0, 0, 0, 1.0]
-        #     ])
+            coordMarker = np.array([
+                [x[0], -y[0], z[0], centerPoint[0]],
+                [x[1], -y[1], z[1], centerPoint[1]],
+                [x[2], -y[2], z[2], centerPoint[2]],
+                [0, 0, 0, 1.0]
+            ])
 
-        #     try:
-        #         inverCoordMarker = np.linalg.inv(coordMarker)
-        #         self.uniform.setValue('extrinct', inverCoordMarker)
-        #     except:
-        #         reset()
-        # else:
-        #     reset()
+            try:
+                inverCoordMarker = np.linalg.inv(coordMarker)
+                self.uniform.setValue('extrinct', inverCoordMarker)
+            except:
+                reset()
+        else:
+            reset()
+
+    def calibration(self, pos, rot):
+
+        self.camPos = pos
+        self.camRot = rot
+
+        rotation = Rotation.from_euler('xyz', rot, degrees=True)
+
+        mat = rotation.as_matrix()
+        self.uniform.setValue('extrinct', np.array([
+            [mat[0][0], mat[0][1], mat[0][2], pos[0]],
+            [mat[1][0], mat[1][1], mat[1][2], pos[1]],
+            [mat[2][0], mat[2][1], mat[2][2], pos[2]],
+            [0, 0, 0, 1]
+        ]))
 
     def updateBoundary(self, pos, neg):
         if(self.uniform):
@@ -519,15 +518,16 @@ class App():
             device = self.devicesControls[key]
             color_image, depth_colormap = device.updateFrames()
             maps.append([color_image, depth_colormap])
-            
-            allcamPos.append(device.getCamPos());
-            allcamRot.append(device.getCamRot());
+
+            allcamPos.append(device.getCamPos())
+            allcamRot.append(device.getCamRot())
 
         if(self.uiControls.getCalibrationMode()):
-            device = self.devicesControls[list(self.devicesControls)[self.uiControls.selectDevice]]
+            device = self.devicesControls[list(self.devicesControls)[
+                self.uiControls.selectDevice]]
             pos = self.uiControls.getUIPos()
             rot = self.uiControls.getUIRot()
-            device.calibration(pos,rot)
+            device.ArucoCalibration(pos, rot)
 
         if(len(self.devicesControls.keys()) > 0):
             self.uiControls.setImage(maps)
@@ -591,7 +591,7 @@ class App():
             ply.save(clipPoints, colors, os.path.join(saveRootPath,
                                                       serial_num+'.clipPointClouds'+'.ply'))
 
-            config={
+            config = {
                 'depth_fx': device.intr.fx,
                 'depth_fy': device.intr.fy,
                 'depth_cx': device.intr.ppx,
@@ -616,4 +616,4 @@ class App():
                                                         'combineAllPcd'+'.ply'))
 
 
-app=App()
+app = App()
