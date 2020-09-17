@@ -37,14 +37,13 @@ class Texture:
             self.iy = input.shape[0]
             self.type = GL_BGR
 
-        self.id = glGenTextures(1)
-
     def activate(self):
         glActiveTexture(GL_TEXTURE0+self.id)
         glBindTexture(GL_TEXTURE_2D, self.id)
 
     def init(self):
         # make it current
+        self.id = glGenTextures(1)
         self.activate()
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
