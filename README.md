@@ -26,6 +26,10 @@ pip install PyQt5
 pip install wxPython
 
 pip install plyfile
+
+pip install scipy
+pip install open3d
+
 ```
 
 - 範例程式

@@ -36,19 +36,19 @@
             <item>
              <widget class="QScrollBar" name="posX">
               <property name="minimum">
-               <number>-30</number>
+               <number>-300</number>
               </property>
               <property name="maximum">
-               <number>30</number>
+               <number>300</number>
               </property>
               <property name="singleStep">
                <number>1</number>
               </property>
               <property name="pageStep">
-               <number>1</number>
+               <number>10</number>
               </property>
               <property name="value">
-               <number>10</number>
+               <number>100</number>
               </property>
               <property name="orientation">
                <enum>Qt::Horizontal</enum>
@@ -58,13 +58,13 @@
             <item>
              <widget class="QScrollBar" name="negX">
               <property name="minimum">
-               <number>-30</number>
+               <number>-300</number>
               </property>
               <property name="maximum">
-               <number>30</number>
+               <number>300</number>
               </property>
               <property name="value">
-               <number>-10</number>
+               <number>-100</number>
               </property>
               <property name="orientation">
                <enum>Qt::Horizontal</enum>
@@ -83,15 +83,15 @@
              </widget>
             </item>
             <item>
-             <widget class="QScrollBar" name="negY">
+             <widget class="QScrollBar" name="posY">
               <property name="minimum">
-               <number>-100</number>
+               <number>-300</number>
               </property>
               <property name="maximum">
-               <number>-1</number>
+               <number>300</number>
               </property>
               <property name="value">
-               <number>-10</number>
+               <number>100</number>
               </property>
               <property name="orientation">
                <enum>Qt::Horizontal</enum>
@@ -99,15 +99,15 @@
              </widget>
             </item>
             <item>
-             <widget class="QScrollBar" name="posY">
+             <widget class="QScrollBar" name="negY">
               <property name="minimum">
-               <number>-30</number>
+               <number>-300</number>
               </property>
               <property name="maximum">
-               <number>30</number>
+               <number>300</number>
               </property>
               <property name="value">
-               <number>10</number>
+               <number>-100</number>
               </property>
               <property name="orientation">
                <enum>Qt::Horizontal</enum>
@@ -128,13 +128,13 @@
             <item>
              <widget class="QScrollBar" name="posZ">
               <property name="minimum">
-               <number>-30</number>
+               <number>-300</number>
               </property>
               <property name="maximum">
-               <number>30</number>
+               <number>300</number>
               </property>
               <property name="value">
-               <number>10</number>
+               <number>100</number>
               </property>
               <property name="orientation">
                <enum>Qt::Horizontal</enum>
@@ -144,13 +144,13 @@
             <item>
              <widget class="QScrollBar" name="negZ">
               <property name="minimum">
-               <number>-30</number>
+               <number>-300</number>
               </property>
               <property name="maximum">
-               <number>-1</number>
+               <number>300</number>
               </property>
               <property name="value">
-               <number>-10</number>
+               <number>-100</number>
               </property>
               <property name="orientation">
                <enum>Qt::Horizontal</enum>

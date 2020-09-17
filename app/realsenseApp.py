@@ -3,6 +3,9 @@ import sys
 import cv2
 import datetime
 import os
+import copy
+
+from Algorithm.open3D.pointCloud import normalEstimate
 
 from qtLayout.RealsenseApp import *
 from PyQt5.QtCore import *
@@ -75,12 +78,13 @@ class UIControls():
     def getboundary(self):
         pos = [0, 0, 0]
         neg = [0, 0, 0]
-        pos[0] = self.ui.posX.value()/10
-        pos[1] = self.ui.posY.value()/10
-        pos[2] = self.ui.posZ.value()/10
-        neg[0] = self.ui.negX.value()/10
-        neg[1] = self.ui.negY.value()/10
-        neg[2] = self.ui.negZ.value()/10
+        scale = 100
+        pos[0] = self.ui.posX.value()/scale
+        pos[1] = self.ui.posY.value()/scale
+        pos[2] = self.ui.posZ.value()/scale
+        neg[0] = self.ui.negX.value()/scale
+        neg[1] = self.ui.negY.value()/scale
+        neg[2] = self.ui.negZ.value()/scale
         return pos, neg
 
     def setImage(self, maps):
@@ -550,6 +554,7 @@ class App():
 
         combineAllPcd = []
         colorsAll = []
+        nomralsAll = []
         for keys in self.devicesControls:
             deviceControls = self.devicesControls[keys]
             device = deviceControls.device
@@ -557,12 +562,19 @@ class App():
             serial_num = device.serial_num
 
             mat4 = deviceControls.uniform.getValue('extrinct')
+            rot4 = copy.deepcopy(mat4)
+            rot4[0][3] = 0
+            rot4[1][3] = 0
+            rot4[2][3] = 0
 
             clipPoints = []
             colors = []
+            nomrals = []
 
             colorArr = device.color_image.flatten().reshape(device.colorH*device.colorW, 3)
             pointArr = device.getPoints().reshape(device.colorH*device.colorW, 3)
+            normalArr = normalEstimate(pointArr)
+
             for index, points in enumerate(pointArr):
 
                 vec = np.array([points[0], points[1], points[2], 1.0])
@@ -577,6 +589,15 @@ class App():
                    self.neg[2] > alignedVec[2]):
                     continue
 
+                normal = np.array(
+                    [normalArr[index][0], normalArr[index][1], normalArr[index][2], 1.0])
+                alignedNormal = rot4.dot(normal)
+
+                nomrals.append(
+                    (alignedNormal[0], alignedNormal[1], alignedNormal[2]))
+                nomralsAll.append(
+                    (alignedNormal[0], alignedNormal[1], alignedNormal[2]))
+
                 color = (colorArr[index][2], colorArr[index]
                          [1], colorArr[index][1])
                 colorsAll.append(color)
@@ -588,8 +609,8 @@ class App():
                 clipPoints.append(
                     (alignedVec[0], alignedVec[1], alignedVec[2]))
 
-            ply.save(clipPoints, colors, os.path.join(saveRootPath,
-                                                      serial_num+'.clipPointClouds'+'.ply'))
+            ply.save(clipPoints, colors, nomrals, os.path.join(saveRootPath,
+                                                               serial_num+'.clipPointClouds'+'.ply'))
 
             config = {
                 'depth_fx': device.intr.fx,
@@ -612,8 +633,8 @@ class App():
             json.write(config, os.path.join(saveRootPath,
                                             serial_num+'.config.json'))
 
-        ply.save(combineAllPcd, colorsAll, os.path.join(saveRootPath,
-                                                        'combineAllPcd'+'.ply'))
+        ply.save(combineAllPcd, colorsAll, nomralsAll, os.path.join(saveRootPath,
+                                                                    'combineAllPcd'+'.ply'))
 
 
 app = App()
