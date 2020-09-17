@@ -81,6 +81,11 @@ class Device:
         self.intr.ppy = data.ppy
         self.intr.fx = data.fx
         self.intr.fy = data.fy
+        self.colorIntr = DotMap()
+        self.colorIntr.ppx = data.ppx
+        self.colorIntr.ppy = data.ppy
+        self.colorIntr.fx = data.fx
+        self.colorIntr.fy = data.fy
         self.depthW = data.w
         self.depthH = data.h
         self.color_image = data.color
