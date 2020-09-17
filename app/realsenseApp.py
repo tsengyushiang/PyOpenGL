@@ -581,7 +581,9 @@ class App():
 
             colorArr = device.color_image.flatten().reshape(device.colorH*device.colorW, 3)
             pointArr = device.getPoints().reshape(device.colorH*device.colorW, 3)
-            normalArr = normalEstimate(pointArr)
+            normalArr = normalEstimate(pointArr, [
+                mat4[0][3], mat4[1][3], mat4[2][3]
+            ])
 
             for index, points in enumerate(pointArr):
 
