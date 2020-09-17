@@ -4,6 +4,7 @@ import cv2
 import datetime
 import os
 import copy
+import time
 
 from Algorithm.open3D.pointCloud import normalEstimate
 
@@ -215,6 +216,7 @@ class DevicesControls():
         self.uniform = None
         self.pointCloudGeo = None
 
+        self.time = 0
         self.color_image = None
         self.depth_colormap = None
         self.depthValues = None
@@ -222,7 +224,7 @@ class DevicesControls():
         self.camRot = []
 
     def getInfo(self):
-        return self.device.serial_num
+        return self.device.serial_num + ', '+str(self.time)
 
     def start(self):
         self.device.start()
@@ -282,6 +284,7 @@ class DevicesControls():
         return color_image, depth_colormap
 
     def setData(self, data):
+        self.time = time.time()-data.time
         self.device.setData(data)
 
     def getCamPos(self):
@@ -535,7 +538,11 @@ class App():
 
         if(len(self.devicesControls.keys()) > 0):
             self.uiControls.setImage(maps)
-            self.uiControls.setList(self.devicesControls.keys())
+            listInfo = []
+            for key in self.devicesControls:
+                device = self.devicesControls[key]
+                listInfo.append(device.getInfo())
+            self.uiControls.setList(listInfo)
             self.uiControls.setCamPosData(allcamPos)
             self.uiControls.setCamRotData(allcamRot)
 

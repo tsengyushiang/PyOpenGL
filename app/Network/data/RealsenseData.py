@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 from _pickle import dumps, loads
 import struct
+import time
 
 
 class RealsenseData():
@@ -46,7 +47,8 @@ class RealsenseData():
                             self.ppx,
                             self.ppy,
                             colorencode,
-                            depthencode])
+                            depthencode,
+                            time.time()])
         return bytestotal
 
     def fromBytes(self, Bytes):
@@ -66,4 +68,5 @@ class RealsenseData():
         self.color = decColor
         self.depthMap = decDepth3
         self.depth = decDepth
+        self.time = arr[10]
         return self
