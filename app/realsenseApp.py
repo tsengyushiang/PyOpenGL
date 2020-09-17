@@ -413,8 +413,9 @@ class App():
 
     def initDevices(self):
         # setUp realsense
-        print(args.localDevice)
-        if(args.localDevice != 0):
+        if(args.device > 0):
+            connected_devices = GetAllRealsenses(args.device-1)
+        elif(args.device == 0):
             connected_devices = GetAllRealsenses()
         else:
             connected_devices = []

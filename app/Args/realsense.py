@@ -7,6 +7,6 @@ def build_argparser():
     args.add_argument('-h', '--help', action='help', default='SUPPRESS')
 
     # custom command line input parameters
-    args.add_argument("-localDevice", "--localDevice",
-                      type=int, default=1)
+    args.add_argument("-device", "--device",
+                      type=int, default=-1,help="specify index of device start from 1,asign 0 to open all device,default value will not open any devices.")
     return parser

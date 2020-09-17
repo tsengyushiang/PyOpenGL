@@ -5,11 +5,15 @@ import os
 from dotmap import DotMap
 
 
-def GetAllRealsenses():
+def GetAllRealsenses(index=None):
     connected_devices = []
     realsense_ctx = rs.context()
     # get all devices serial numbers
     for i in range(len(realsense_ctx.devices)):
+
+        if(index != None and i != index):
+            continue
+
         detected_camera = realsense_ctx.devices[i].get_info(
             rs.camera_info.serial_number)
         connected_devices.append(Device(detected_camera))
