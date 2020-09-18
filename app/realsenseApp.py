@@ -560,9 +560,8 @@ class App():
         saveRootPath = os.path.join(path, currentTimeStr)
         os.mkdir(saveRootPath)
 
-        combineAllPcd = []
-        colorsAll = []
-        nomralsAll = []
+        pcdInfos = []
+        # save image and info
         for keys in self.devicesControls:
             deviceControls = self.devicesControls[keys]
             device = deviceControls.device
@@ -570,57 +569,6 @@ class App():
             serial_num = device.serial_num
 
             mat4 = deviceControls.uniform.getValue('extrinct')
-            rot4 = copy.deepcopy(mat4)
-            rot4[0][3] = 0
-            rot4[1][3] = 0
-            rot4[2][3] = 0
-
-            clipPoints = []
-            colors = []
-            nomrals = []
-
-            colorArr = device.color_image.flatten().reshape(device.colorH*device.colorW, 3)
-            pointArr = device.getPoints().reshape(device.colorH*device.colorW, 3)
-            normalArr = normalEstimate(pointArr, [
-                0,0,0
-            ])
-
-            for index, points in enumerate(pointArr):
-
-                vec = np.array([points[0], points[1], points[2], 1.0])
-
-                alignedVec = mat4.dot(vec)
-
-                if(self.pos[0] < alignedVec[0] or
-                   self.pos[1] < alignedVec[1] or
-                   self.pos[2] < alignedVec[2] or
-                   self.neg[0] > alignedVec[0] or
-                   self.neg[1] > alignedVec[1] or
-                   self.neg[2] > alignedVec[2]):
-                    continue
-
-                normal = np.array(
-                    [normalArr[index][0], normalArr[index][1], normalArr[index][2], 1.0])
-                alignedNormal = rot4.dot(normal)
-
-                nomrals.append(
-                    (alignedNormal[0], alignedNormal[1], alignedNormal[2]))
-                nomralsAll.append(
-                    (alignedNormal[0], alignedNormal[1], alignedNormal[2]))
-
-                color = (colorArr[index][2], colorArr[index]
-                         [1], colorArr[index][1])
-                colorsAll.append(color)
-                colors.append(color)
-
-                combineAllPcd.append(
-                    (alignedVec[0], alignedVec[1], alignedVec[2]))
-
-                clipPoints.append(
-                    (alignedVec[0], alignedVec[1], alignedVec[2]))
-
-            ply.save(clipPoints, colors, nomrals, os.path.join(saveRootPath,
-                                                               serial_num+'.clipPointClouds'+'.ply'))
 
             config = {
                 'depth_fx': device.intr.fx,
@@ -642,6 +590,69 @@ class App():
 
             json.write(config, os.path.join(saveRootPath,
                                             serial_num+'.config.json'))
+
+            colorArr = device.color_image.flatten().reshape(device.colorH*device.colorW, 3)
+            pointArr = device.getPoints().reshape(device.colorH*device.colorW, 3)
+
+            pcdInfos.append((serial_num,colorArr, pointArr, mat4, self.pos, self.neg))
+
+        combineAllPcd = []
+        colorsAll = []
+        nomralsAll = []
+        for info in pcdInfos:
+            serial_num = info[0]
+            colorArr = info[1]
+            pointArr = info[2]
+            mat4 = info[3]
+            pos = info[4]
+            neg = info[5]
+
+            clipPoints = []
+            colors = []
+            nomrals = []
+
+            vaildPoints = []
+            # save pointcloud and vertexcolor
+            for index, points in enumerate(pointArr):
+
+                vec = np.array([points[0], points[1], points[2], 1.0])
+
+                alignedVec = mat4.dot(vec)
+
+                if(pos[0] < alignedVec[0] or
+                   pos[1] < alignedVec[1] or
+                   pos[2] < alignedVec[2] or
+                   neg[0] > alignedVec[0] or
+                   neg[1] > alignedVec[1] or
+                   neg[2] > alignedVec[2]):
+                    continue
+
+                color = (colorArr[index][2], colorArr[index]
+                         [1], colorArr[index][1])
+                colorsAll.append(color)
+                colors.append(color)
+
+                vaildPoints.append([
+                    alignedVec[0], alignedVec[1], alignedVec[2]
+                ])
+
+                combineAllPcd.append(
+                    (alignedVec[0], alignedVec[1], alignedVec[2]))
+
+                clipPoints.append(
+                    (alignedVec[0], alignedVec[1], alignedVec[2]))
+
+            # calc vertex normal
+            nomralArr = normalEstimate(vaildPoints, [
+                mat4[0][3], mat4[1][3], mat4[2][3]
+            ])
+            for n in nomralArr:
+                normal = (n[0], n[1], n[2])
+                nomrals.append(normal)
+                nomralsAll.append(normal)
+
+            ply.save(clipPoints, colors, nomrals, os.path.join(saveRootPath,
+                                                               serial_num+'.clipPointClouds'+'.ply'))
 
         ply.save(combineAllPcd, colorsAll, nomralsAll, os.path.join(saveRootPath,
                                                                     'combineAllPcd'+'.ply'))
