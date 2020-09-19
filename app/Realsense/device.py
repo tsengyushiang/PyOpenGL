@@ -165,7 +165,7 @@ class Device:
         self.getFrames()
 
         cv2.imwrite(
-            os.path.join(path, self.serial_num+'.depth16'+'.png'), self.depthValues.astype(np.uint16))
+            os.path.join(path, self.serial_num+'.depth16'+'.png'), self.depth_image.astype(np.uint16))
         cv2.imwrite(
             os.path.join(path, self.serial_num+'.color'+'.png'), self.color_image)
         cv2.imwrite(

@@ -224,7 +224,7 @@ class DevicesControls():
         self.camRot = []
 
     def getInfo(self):
-        return self.device.serial_num + ', '+str(self.time)
+        return self.device.serial_num
 
     def start(self):
         self.device.start()
@@ -575,14 +575,15 @@ class App():
                 'depth_fy': device.intr.fy,
                 'depth_cx': device.intr.ppx,
                 'depth_cy': device.intr.ppy,
+                'depth_scale': device.depth_scale,
                 'depth_width': device.depthW,
                 'depth_height': device.depthH,
-                'RGB_fx': device.colorIntr.fx,
-                'RGB_fy': device.colorIntr.fy,
-                'RGB_cx': device.colorIntr.ppx,
-                'RGB_cy': device.colorIntr.ppy,
-                'RGB_width': device.colorW,
-                'RGB_height': device.colorH,
+                'rgb_fx': device.colorIntr.fx,
+                'rgb_fy': device.colorIntr.fy,
+                'rgb_cx': device.colorIntr.ppx,
+                'rgb_cy': device.colorIntr.ppy,
+                'rgb_width': device.colorW,
+                'rgb_height': device.colorH,
                 'calibrateMat': mat4,
                 'positiveBoundaryCorner': self.pos,
                 'negativeBoundaryCorner': self.neg
@@ -594,7 +595,8 @@ class App():
             colorArr = device.color_image.flatten().reshape(device.colorH*device.colorW, 3)
             pointArr = device.getPoints().reshape(device.colorH*device.colorW, 3)
 
-            pcdInfos.append((serial_num,colorArr, pointArr, mat4, self.pos, self.neg))
+            pcdInfos.append((serial_num, colorArr, pointArr,
+                             mat4, self.pos, self.neg))
 
         combineAllPcd = []
         colorsAll = []
