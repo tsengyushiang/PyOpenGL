@@ -267,8 +267,9 @@ class DevicesControls():
 
         return Mesh(mat, self.pointCloudGeo)
 
-    def updateFrames(self):
-        color_image, depth_colormap, depthValues = self.device.getFrames()
+    def updateFrames(self, visualize):
+        color_image, depth_colormap, depthValues = self.device.getFrames(
+            visualize)
 
         self.color_image = color_image
         self.depth_colormap = depth_colormap
@@ -524,7 +525,9 @@ class App():
 
         for key in self.devicesControls:
             device = self.devicesControls[key]
-            color_image, depth_colormap = device.updateFrames()
+            color_image, depth_colormap = device.updateFrames(
+                not (self.socket != None and self.socket.type == Socket.CLIENT)
+            )
             maps.append([color_image, depth_colormap])
 
             allcamPos.append(device.getCamPos())

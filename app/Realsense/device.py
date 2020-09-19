@@ -94,6 +94,7 @@ class Device:
         self.depthH = data.h
         self.color_image = data.color
         self.depth_colormap = data.depthMap
+        self.depth_image = data.depth
         self.depthValues = data.depth*data.depth_scale
 
     def getFrames8bits(self, maxMeter):
@@ -122,30 +123,29 @@ class Device:
 
         return self.color_image, self.depth_colormap, self.depthValues.flatten()
 
-    def getFrames(self):
+    def getFrames(self, visualize=False):
 
         if(self.pipeline):
             frames = self.pipeline.wait_for_frames()
             aligned_frames = self.align.process(frames)
 
-            # aligned_depth_frame is a 640x480 depth image
             depth_frame = aligned_frames.get_depth_frame()
             color_frame = aligned_frames.get_color_frame()
-
-            #depth_frame = frames.get_depth_frame()
-            #color_frame = frames.get_color_frame()
 
             if not depth_frame or not color_frame:
                 print(self.serial_num, 'retrieve frame error !!')
                 return None, None, None
 
             self.color_image = np.asanyarray(color_frame.get_data())
+            self.depth_image = np.asanyarray(depth_frame.get_data())
+            self.depthValues = self.depth_image*self.depth_scale
+
+            if(visualize == False):
+                return self.color_image, self.color_image, self.depthValues.flatten()
+            
             colorizer = rs.colorizer()
             self.depth_colormap = np.asanyarray(
                 colorizer.colorize(depth_frame).get_data())
-
-            self.depth_image = np.asanyarray(depth_frame.get_data())
-            self.depthValues = self.depth_image*self.depth_scale
 
         return self.color_image, self.depth_colormap, self.depthValues.flatten()
 
@@ -167,6 +167,4 @@ class Device:
         cv2.imwrite(
             os.path.join(path, self.serial_num+'.depth16'+'.png'), self.depth_image.astype(np.uint16))
         cv2.imwrite(
-            os.path.join(path, self.serial_num+'.color'+'.png'), self.color_image)
-        cv2.imwrite(
-            os.path.join(path, self.serial_num+'.depth'+'.png'), self.depth_colormap)
+            os.path.join(path, self.serial_num+'.color'+'.png'), self.color_image)    
