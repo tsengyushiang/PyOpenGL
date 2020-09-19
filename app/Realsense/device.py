@@ -80,12 +80,14 @@ class Device:
 
     def pixel2point(self, coord):
 
-        depth = (self.depth_image *
-                 self.depth_scale)[int(coord[1])][int(coord[0])]
+        depth = (self.depth_image_downSampled *
+                 self.depth_scale)[int(coord[1]/self.downSampleFactor)
+                                   ][int(coord[0]/self.downSampleFactor)]
 
-        pointX = (coord[0]-self.colorIntr.ppx)/self.colorIntr.fx*depth
-        pointY = (self.colorH-coord[1] -
-                  self.colorIntr.ppy)/self.colorIntr.fy*depth
+        pointX = (coord[0]/self.downSampleFactor -
+                  self.depthIntr.ppx)/self.depthIntr.fx*depth
+        pointY = (self.depthH-coord[1]/self.downSampleFactor -
+                  self.depthIntr.ppy)/self.depthIntr.fy*depth
 
         return np.array([pointX, pointY, depth])
 
@@ -120,6 +122,7 @@ class Device:
         self.color_image = data.color
         self.depth_colormap = data.depthMap
         self.depth_image = data.depth
+        self.depth_image_downSampled = data.depth
         self.depthValues = data.depth*data.depth_scale
 
     def getFrames8bits(self, maxMeter):

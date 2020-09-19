@@ -10,6 +10,11 @@ class Aruco():
         # Initialize the detector parameters using default values
         self.parameters = cv2.aruco.DetectorParameters_create()
 
+        self.latestmarkData = [None, None, None, None, 0]
+
+        self.resetCount = 30
+        self.notFoundCounter = 0
+
     def saveMarkers(self):
         # Load the predefined dictionary
         dictionary = cv2.aruco.Dictionary_get(cv2.aruco.DICT_6X6_250)
@@ -36,23 +41,32 @@ class Aruco():
             color_image, self.dictionary, parameters=self.parameters)
 
         if len(markerCorners) < 1:
-            return None, None, None, None, 0
+            self.notFoundCounter = self.notFoundCounter+1
+            if(self.notFoundCounter >= self.resetCount):
+                self.latestmarkData = [None, None, None, None, 0]
+                self.notFoundCounter = 0
+        else:
+            self.notFoundCounter = 0
+            for markerCorner in markerCorners:
+                cv2.circle(
+                    color_image, (markerCorner[0][0][0], markerCorner[0][0][1]), 15, (0, 255, 255), 3)
+                cv2.circle(
+                    color_image, (markerCorner[0][1][0], markerCorner[0][1][1]), 15, (0, 0, 255), 3)
+                cv2.circle(
+                    color_image, (markerCorner[0][2][0], markerCorner[0][2][1]), 15, (255, 0, 255), 3)
+                cv2.circle(
+                    color_image, (markerCorner[0][3][0], markerCorner[0][3][1]), 15, (255, 255,), 3)
 
-        for markerCorner in markerCorners:
-            cv2.circle(
-                color_image, (markerCorner[0][0][0], markerCorner[0][0][1]), 15, (0, 255, 255), 3)
-            cv2.circle(
-                color_image, (markerCorner[0][1][0], markerCorner[0][1][1]), 15, (0, 0, 255), 3)
-            cv2.circle(
-                color_image, (markerCorner[0][2][0], markerCorner[0][2][1]), 15, (255, 0, 255), 3)
-            cv2.circle(
-                color_image, (markerCorner[0][3][0], markerCorner[0][3][1]), 15, (255, 255,), 3)
+            self.latestmarkData = [(markerCorners[0][0][0][0], markerCorners[0][0][0][1]),
+                                   (markerCorners[0][0][1][0],
+                                    markerCorners[0][0][1][1]),
+                                   (markerCorners[0][0][2][0],
+                                    markerCorners[0][0][2][1]),
+                                   (markerCorners[0][0][3][0],
+                                    markerCorners[0][0][3][1]),
+                                   len(markerCorners)]
 
-        return (markerCorners[0][0][0][0], markerCorners[0][0][0][1]),\
-            (markerCorners[0][0][1][0], markerCorners[0][0][1][1]), \
-            (markerCorners[0][0][2][0], markerCorners[0][0][2][1]), \
-            (markerCorners[0][0][3][0], markerCorners[0][0][3][1]),\
-            len(markerCorners)
+        return self.latestmarkData
 
 
 ArucoInstance = Aruco()
