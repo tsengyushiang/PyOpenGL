@@ -1,35 +1,32 @@
-# pip install plyfile
-# https://pypi.org/project/plyfile/
-
-from plyfile import PlyData, PlyElement
 import numpy as np
 
-
 def save(npArr, colorArr, normalArr, path):
+    header = ["ply",
+              "format ascii 1.0",
+              "element vertex "+str(len(npArr)),
+              "property float x",
+              "property float y",
+              "property float z",
+              "property uchar red",
+              "property uchar green",
+              "property uchar blue",
+              "property float nx",
+              "property float ny",
+              "property float nz",
+              "end_header", ]
 
-    vertex_color = np.array(colorArr,
-                            dtype=[('red', 'u1'), ('green', 'u1'), ('blue', 'u1')])
+    outF = open(path, "w")
 
-    vertex = np.array(npArr,
-                      dtype=[('x', 'f4'), ('y', 'f4'),
-                             ('z', 'f4')])
+    # write header
+    for line in header:
+        outF.write(line)
+        outF.write("\n")
 
-    normal = np.array(normalArr,
-                      dtype=[('nx', 'f4'), ('ny', 'f4'),
-                             ('nz', 'f4')])
-
-    n = len(vertex)
-
-    vertex_all = np.empty(n, vertex.dtype.descr +
-                          vertex_color.dtype.descr+normal.dtype.descr)
-
-    for prop in vertex.dtype.names:
-        vertex_all[prop] = vertex[prop]
-
-    for prop in vertex_color.dtype.names:
-        vertex_all[prop] = vertex_color[prop]
-
-    for prop in normal.dtype.names:
-        vertex_all[prop] = normal[prop]
-
-    PlyData([PlyElement.describe(vertex_all, 'vertex')], text=True).write(path)
+    for index in range(len(npArr)):
+        line = "{0} {1} {2} {3} {4} {5} {6} {7} {8}\n".format(
+            npArr[index][0], npArr[index][1], npArr[index][2],
+            colorArr[index][0], colorArr[index][1], colorArr[index][2],
+            normalArr[index][0], normalArr[index][1], normalArr[index][2]
+        )
+        outF.write(line)
+    outF.close()
