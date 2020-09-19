@@ -3,6 +3,7 @@ import numpy as np
 import cv2
 import os
 from dotmap import DotMap
+from .NetworkData import RealsenseData
 
 
 def GetAllRealsenses(index=None):
@@ -26,10 +27,15 @@ class Device:
         print('create Realsense', serial_num)
         self.serial_num = serial_num
 
-        self.depthW = 640
-        self.depthH = 480
-        self.colorW = 640
-        self.colorH = 480
+        self.colorW = 1920
+        self.colorH = 1080
+        self.acutlaDepthW = 1280
+        self.actualDepthH = 720
+
+        # after alignment depth map will have the same resolution as color
+        self.downSampleFactor = 5
+        self.depthW = int(self.colorW/self.downSampleFactor)
+        self.depthH = int(self.colorH/self.downSampleFactor)
 
         self.pipeline = None
         if(isPhysic):
@@ -40,7 +46,7 @@ class Device:
         self.config = rs.config()
         self.config.enable_device(self.serial_num)
         self.config.enable_stream(
-            rs.stream.depth, self.depthW, self.depthH, rs.format.z16, 30)
+            rs.stream.depth, self.acutlaDepthW, self.actualDepthH, rs.format.z16, 30)
         self.config.enable_stream(
             rs.stream.color, self.colorW, self.colorH, rs.format.bgr8, 30)
 
@@ -54,15 +60,19 @@ class Device:
 
             # get camera instri
             profile = cfg.get_stream(rs.stream.depth)
-            self.intr = profile.as_video_stream_profile().get_intrinsics()
-            # print(self.intr.ppx, self.intr.ppy, self.intr.fx, self.intr.fy)
-            # print(self.intr.coeffs)
+            self.actualDepthIntr = profile.as_video_stream_profile().get_intrinsics()
+
             profileColor = cfg.get_stream(rs.stream.color)
             self.colorIntr = profileColor.as_video_stream_profile().get_intrinsics()
 
+            self.depthIntr = DotMap()
+            self.depthIntr.fx = self.colorIntr.fx/self.downSampleFactor
+            self.depthIntr.fy = self.colorIntr.fy/self.downSampleFactor
+            self.depthIntr.ppx = self.colorIntr.ppx/self.downSampleFactor
+            self.depthIntr.ppy = self.colorIntr.ppy/self.downSampleFactor
+
             depth_sensor = cfg.get_device().first_depth_sensor()
             self.depth_scale = depth_sensor.get_depth_scale()
-            # print("Depth Scale is: ", depth_scale)
 
     def stop(self):
         if(self.pipeline):
@@ -70,7 +80,8 @@ class Device:
 
     def pixel2point(self, coord):
 
-        depth = self.depthValues[int(coord[1])][int(coord[0])]
+        depth = (self.depth_image *
+                 self.depth_scale)[int(coord[1])][int(coord[0])]
 
         pointX = (coord[0]-self.colorIntr.ppx)/self.colorIntr.fx*depth
         pointY = (self.colorH-coord[1] -
@@ -78,13 +89,27 @@ class Device:
 
         return np.array([pointX, pointY, depth])
 
+    def getData(self):
+        data = RealsenseData()
+        data.serial_num = self.serial_num
+        data.depth_scale = self.depth_scale
+        data.w = self.depthW
+        data.h = self.depthH
+        data.fx = self.depthIntr.fx
+        data.fy = self.depthIntr.fy
+        data.ppx = self.depthIntr.ppx
+        data.ppy = self.depthIntr.ppy
+        data.color = self.color_image
+        data.depth = self.depth_image
+        return data
+
     def setData(self, data):
         self.depth_scale = data.depth_scale
-        self.intr = DotMap()
-        self.intr.ppx = data.ppx
-        self.intr.ppy = data.ppy
-        self.intr.fx = data.fx
-        self.intr.fy = data.fy
+        self.depthIntr = DotMap()
+        self.depthIntr.ppx = data.ppx
+        self.depthIntr.ppy = data.ppy
+        self.depthIntr.fx = data.fx
+        self.depthIntr.fy = data.fy
         self.colorIntr = DotMap()
         self.colorIntr.ppx = data.ppx
         self.colorIntr.ppy = data.ppy
@@ -138,28 +163,37 @@ class Device:
 
             self.color_image = np.asanyarray(color_frame.get_data())
             self.depth_image = np.asanyarray(depth_frame.get_data())
-            self.depthValues = self.depth_image*self.depth_scale
+            self.depth_image_downSampled = self.depth_image[::self.downSampleFactor,
+                                                            ::self.downSampleFactor]
+            self.depthValues = self.depth_image_downSampled*self.depth_scale
 
             if(visualize == False):
                 return self.color_image, self.color_image, self.depthValues.flatten()
-            
+
             colorizer = rs.colorizer()
             self.depth_colormap = np.asanyarray(
                 colorizer.colorize(depth_frame).get_data())
 
         return self.color_image, self.depth_colormap, self.depthValues.flatten()
 
+    def getPointsColors(self):
+
+        downSample = self.color_image[::self.downSampleFactor,
+                                      ::self.downSampleFactor]
+
+        return downSample.flatten().reshape(self.depthW*self.depthH, 3)
+
     def getPoints(self):
         # calc point cloud
-        h = (np.arange(self.colorH, dtype=float)
-             [::-1]-self.colorIntr.ppy)/self.colorIntr.fy
-        w = (np.arange(self.colorW, dtype=float) -
-             self.colorIntr.ppx)/self.colorIntr.fx
-        points = np.empty((self.colorH, self.colorW, 3), dtype=float)
+        h = (np.arange(self.depthH, dtype=float)
+             [::-1]-self.depthIntr.ppy)/self.depthIntr.fy
+        w = (np.arange(self.depthW, dtype=float) -
+             self.depthIntr.ppx)/self.depthIntr.fx
+        points = np.empty((self.depthH, self.depthW, 3), dtype=float)
         points[:, :, 1] = h[:, None]*self.depthValues
         points[:, :, 0] = w*self.depthValues
         points[:, :, 2] = self.depthValues
-        return points
+        return np.reshape(points, (self.depthH*self.depthW, 3))
 
     def saveFrames(self, path):
         self.getFrames()
@@ -167,4 +201,4 @@ class Device:
         cv2.imwrite(
             os.path.join(path, self.serial_num+'.depth16'+'.png'), self.depth_image.astype(np.uint16))
         cv2.imwrite(
-            os.path.join(path, self.serial_num+'.color'+'.png'), self.color_image)    
+            os.path.join(path, self.serial_num+'.color'+'.png'), self.color_image)

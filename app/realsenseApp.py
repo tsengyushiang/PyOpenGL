@@ -16,9 +16,9 @@ from Aruco.Aruco import ArucoInstance
 from Network.socket.Server import Server
 from Network.socket.Client import Client
 from Network.socket.Enum import Socket
-from Network.data.RealsenseData import RealsenseData
 
 from Realsense.device import *
+from Realsense.NetworkData import RealsenseData
 
 from opencv.QtcvImage import *
 
@@ -230,9 +230,9 @@ class DevicesControls():
         self.device.start()
 
     def genPointClouds(self):
-        h = self.device.colorH
-        w = self.device.colorW
-        intr = self.device.colorIntr
+        h = self.device.depthH
+        w = self.device.depthW
+        intr = self.device.depthIntr
 
         texColor = Texture(np.ones((h, w, 3)))
         texDepth = Texture(np.ones((h, w, 3)))
@@ -297,17 +297,7 @@ class DevicesControls():
         if(self.device != None):
 
             _, _, _ = self.device.getFrames()
-
-            data.serial_num = self.device.serial_num
-            data.depth_scale = self.device.depth_scale
-            data.w = self.device.depthW
-            data.h = self.device.depthH
-            data.fx = self.device.intr.fx
-            data.fy = self.device.intr.fy
-            data.ppx = self.device.intr.ppx
-            data.ppy = self.device.intr.ppy
-            data.color = self.device.color_image
-            data.depth = self.device.depth_image
+            data = self.device.getData()
 
         return data
 
@@ -555,6 +545,7 @@ class App():
             len(self.devicesControls)))
 
     def save(self):
+        start = time.time()
         currentTime = datetime.datetime.now()
         currentTimeStr = currentTime.strftime("%Y%m%d_%H%M%S_%f")[:-3]
         # print(currentTimeStr)
@@ -574,10 +565,10 @@ class App():
             mat4 = deviceControls.uniform.getValue('extrinct')
 
             config = {
-                'depth_fx': device.intr.fx,
-                'depth_fy': device.intr.fy,
-                'depth_cx': device.intr.ppx,
-                'depth_cy': device.intr.ppy,
+                'depth_fx': device.depthIntr.fx,
+                'depth_fy': device.depthIntr.fy,
+                'depth_cx': device.depthIntr.ppx,
+                'depth_cy': device.depthIntr.ppy,
                 'depth_scale': device.depth_scale,
                 'depth_width': device.depthW,
                 'depth_height': device.depthH,
@@ -595,8 +586,8 @@ class App():
             json.write(config, os.path.join(saveRootPath,
                                             serial_num+'.config.json'))
 
-            colorArr = device.color_image.flatten().reshape(device.colorH*device.colorW, 3)
-            pointArr = device.getPoints().reshape(device.colorH*device.colorW, 3)
+            colorArr = device.getPointsColors()
+            pointArr = device.getPoints()
 
             pcdInfos.append((serial_num, colorArr, pointArr,
                              mat4, self.pos, self.neg))
@@ -661,6 +652,8 @@ class App():
 
         ply.save(combineAllPcd, colorsAll, nomralsAll, os.path.join(saveRootPath,
                                                                     'combineAllPcd'+'.ply'))
+
+        print('save file spend', time.time()-start)
 
 
 app = App()
