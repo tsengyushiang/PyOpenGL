@@ -7,7 +7,7 @@ import time
 
 class RealsenseData():
     def __init__(self):
-        self.scale = 8
+        self.scale = 1
         self.serial_num = 0
         self.depth_scale = 0
         self.w = 0

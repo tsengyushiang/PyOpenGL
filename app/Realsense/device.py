@@ -100,7 +100,7 @@ class Device:
         data.ppx = self.depthIntr.ppx
         data.ppy = self.depthIntr.ppy
         data.color = self.color_image
-        data.depth = self.depth_image
+        data.depth = self.depth_image_downSampled
         return data
 
     def setData(self, data):
