@@ -42,8 +42,7 @@ timer.timeout.connect(mainloop)
 timer.start(1)
 
 
-def genPointCloudMesh(h, w, intr, color, depth):
-
+def genPointCloudMesh(h, w, intr, color, depth, transform):
     texColor = Texture(color)
     texDepth = Texture(color)
 
@@ -59,12 +58,7 @@ def genPointCloudMesh(h, w, intr, color, depth):
     uniform.addFloat('h', h)
     uniform.addvec3('bboxPos', [1, 1, 1])
     uniform.addvec3('bboxNeg', [-1, -1, -1])
-    uniform.addMat4('extrinct', np.array([
-        [1.0, 0.0, 0.0, 0.0],
-        [0.0, 1.0, 0.0, 0.0],
-        [0.0, 0.0, 1.0, 0.0],
-        [0.0, 0.0, 0.0, 1.0]
-    ]))
+    uniform.addMat4('extrinct', np.array(transform))
 
     mat = ShaderMaterial(pcdShader.vertex_shader,
                          pcdShader.fragment_shader,
@@ -107,7 +101,7 @@ intr.fy = data['depth_fy']
 intr.ppx = data['depth_cx']
 intr.ppy = data['depth_cy']
 pcds = genPointCloudMesh(
-    data['depth_height'], data['depth_width'], intr, color, depth16.flatten()*data['depth_scale'])
+    data['depth_height'], data['depth_width'], intr, color, depth16.flatten()*data['depth_scale'], data['calibrateMat'])
 scene2.add(pcds)
 
 sys.exit(app.exec_())
