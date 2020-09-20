@@ -271,16 +271,17 @@ class DevicesControls():
         color_image, depth_colormap, depthValues = self.device.getFrames(
             visualize)
 
-        self.color_image = color_image
-        self.depth_colormap = depth_colormap
-        self.depthValues = depthValues
+        if(visualize==True):
+            self.color_image = color_image
+            self.depth_colormap = depth_colormap
+            self.depthValues = depthValues
 
-        # update opengl texture
-        self.imgTexture[0].update(color_image)
-        self.imgTexture[1].update(depth_colormap)
+            # update opengl texture
+            self.imgTexture[0].update(color_image)
+            self.imgTexture[1].update(depth_colormap)
 
-        # print(pointcloud)
-        self.pointCloudGeo.update(depthValues)
+            # print(pointcloud)
+            self.pointCloudGeo.update(depthValues)
 
         return color_image, depth_colormap
 
@@ -478,6 +479,7 @@ class App():
     def onClientDataRecv(self, dataBytes):
         try:
             data = RealsenseData().fromBytes(dataBytes)
+            print('network delay : ',time.time()-data.time)
             if(data.serial_num not in self.devicesControls):
                 device = Device(data.serial_num, False)
                 controls = DevicesControls(device)
@@ -509,15 +511,15 @@ class App():
 
         self.scene.startDraw()
 
+        saveComputePower = not (self.socket != None and self.socket.type == Socket.CLIENT)
+
         maps = []
         allcamPos = []
         allcamRot = []
 
         for key in self.devicesControls:
             device = self.devicesControls[key]
-            color_image, depth_colormap = device.updateFrames(
-                not (self.socket != None and self.socket.type == Socket.CLIENT)
-            )
+            color_image, depth_colormap = device.updateFrames(saveComputePower)
             maps.append([color_image, depth_colormap])
 
             allcamPos.append(device.getCamPos())
@@ -530,7 +532,7 @@ class App():
             rot = self.uiControls.getUIRot()
             device.ArucoCalibration(pos, rot)
 
-        if(len(self.devicesControls.keys()) > 0):
+        if(len(self.devicesControls.keys()) > 0 and saveComputePower):
             self.uiControls.setImage(maps)
             listInfo = []
             for key in self.devicesControls:
