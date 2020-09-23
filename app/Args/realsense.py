@@ -8,5 +8,8 @@ def build_argparser():
 
     # custom command line input parameters
     args.add_argument("-device", "--device",
-                      type=int, default=-1,help="specify index of device start from 1,asign 0 to open all device,default value will not open any devices.")
+                      type=int, default=-1, help="specify index of device start from 1,asign 0 to open all device,default value will not open any devices.")
+    args.add_argument("-output", "--output",
+                      type=str, default='./output/realsense', help="where to save files.")
+
     return parser

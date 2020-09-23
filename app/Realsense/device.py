@@ -4,6 +4,18 @@ import cv2
 import os
 from dotmap import DotMap
 from .NetworkData import RealsenseData
+import datetime
+
+
+def depth2points(iw, ih, ppx, ppy, fx, fy, depthvalues):
+    # calc point cloud
+    h = (np.arange(ih, dtype=float)[::-1]-ppy)/fy
+    w = (np.arange(iw, dtype=float)-ppx)/fx
+    points = np.empty((ih, iw, 3), dtype=float)
+    points[:, :, 1] = h[:, None]*depthvalues
+    points[:, :, 0] = w*depthvalues
+    points[:, :, 2] = depthvalues
+    return np.reshape(points, (ih*iw, 3))
 
 
 def GetAllRealsenses(index=None):
@@ -38,6 +50,7 @@ class Device:
         self.depthH = int(self.colorH/self.downSampleFactor)
 
         self.pipeline = None
+        self.captureTime = 'new'
         if(isPhysic):
             self.configPipeLine()
 
@@ -157,6 +170,9 @@ class Device:
             frames = self.pipeline.wait_for_frames()
             aligned_frames = self.align.process(frames)
 
+            currentTime = datetime.datetime.now()
+            self.captureTime = currentTime.strftime("%Y%m%d_%H%M%S_%f")[:-3]
+
             depth_frame = aligned_frames.get_depth_frame()
             color_frame = aligned_frames.get_color_frame()
 
@@ -199,9 +215,29 @@ class Device:
         return np.reshape(points, (self.depthH*self.depthW, 3))
 
     def saveFrames(self, path):
-        self.getFrames()
 
         cv2.imwrite(
-            os.path.join(path, self.serial_num+'.depth16'+'.png'), self.depth_image.astype(np.uint16))
+            os.path.join(path, self.captureTime+"."+self.serial_num+'.depth16.png'), self.depth_image.astype(np.uint16))
         cv2.imwrite(
-            os.path.join(path, self.serial_num+'.color'+'.png'), self.color_image)
+            os.path.join(path, self.captureTime+"."+self.serial_num+'.color.png'), self.color_image)
+
+    def getConfig(self):
+
+        # becasue align depth has the same resolution as color
+        return {
+            'realsense_serial_num': self.serial_num,
+            'time': self.captureTime,
+            'depth_fx': self.colorIntr.fx,
+            'depth_fy': self.colorIntr.fy,
+            'depth_cx': self.colorIntr.ppx,
+            'depth_cy': self.colorIntr.ppy,
+            'depth_scale': self.depth_scale,
+            'depth_width': self.colorW,
+            'depth_height': self.colorH,
+            'rgb_fx': self.colorIntr.fx,
+            'rgb_fy': self.colorIntr.fy,
+            'rgb_cx': self.colorIntr.ppx,
+            'rgb_cy': self.colorIntr.ppy,
+            'rgb_width': self.colorW,
+            'rgb_height': self.colorH,
+        }

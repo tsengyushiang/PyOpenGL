@@ -1,12 +1,8 @@
 from Args.realsense import build_argparser
 import sys
 import cv2
-import datetime
 import os
 import copy
-import time
-
-from Algorithm.open3D.pointCloud import normalEstimate
 
 from qtLayout.RealsenseApp import *
 from PyQt5.QtCore import *
@@ -30,7 +26,6 @@ from opengl.Uniform import *
 from opengl.Texture import *
 import opengl.Helper as Glhelper
 
-import FileIO.ply as ply
 import FileIO.json as json
 
 import shaders.realsensePointCloud as myShader
@@ -271,7 +266,7 @@ class DevicesControls():
         color_image, depth_colormap, depthValues = self.device.getFrames(
             visualize)
 
-        if(visualize==True):
+        if(visualize == True):
             self.color_image = color_image
             self.depth_colormap = depth_colormap
             self.depthValues = depthValues
@@ -479,7 +474,7 @@ class App():
     def onClientDataRecv(self, dataBytes):
         try:
             data = RealsenseData().fromBytes(dataBytes)
-            print('network delay : ',time.time()-data.time)
+            print('network delay : ', time.time()-data.time)
             if(data.serial_num not in self.devicesControls):
                 device = Device(data.serial_num, False)
                 controls = DevicesControls(device)
@@ -511,7 +506,8 @@ class App():
 
         self.scene.startDraw()
 
-        saveComputePower = not (self.socket != None and self.socket.type == Socket.CLIENT)
+        saveComputePower = not (
+            self.socket != None and self.socket.type == Socket.CLIENT)
 
         maps = []
         allcamPos = []
@@ -547,115 +543,27 @@ class App():
             len(self.devicesControls)))
 
     def save(self):
-        start = time.time()
-        currentTime = datetime.datetime.now()
-        currentTimeStr = currentTime.strftime("%Y%m%d_%H%M%S_%f")[:-3]
-        # print(currentTimeStr)
-        path = os.getcwd()
-        # print("The current working directory is %s" % path)
-        saveRootPath = os.path.join(path, currentTimeStr)
-        os.mkdir(saveRootPath)
 
-        pcdInfos = []
+        saveRootPath = os.path.join(args.output, './')
+        if not os.path.exists(saveRootPath):
+            os.makedirs(saveRootPath)
+
         # save image and info
         for keys in self.devicesControls:
+
             deviceControls = self.devicesControls[keys]
             device = deviceControls.device
             device.saveFrames(saveRootPath)
-            serial_num = device.serial_num
 
             mat4 = deviceControls.uniform.getValue('extrinct')
 
-            config = {
-                'depth_fx': device.depthIntr.fx,
-                'depth_fy': device.depthIntr.fy,
-                'depth_cx': device.depthIntr.ppx,
-                'depth_cy': device.depthIntr.ppy,
-                'depth_scale': device.depth_scale,
-                'depth_width': device.depthW,
-                'depth_height': device.depthH,
-                'rgb_fx': device.colorIntr.fx,
-                'rgb_fy': device.colorIntr.fy,
-                'rgb_cx': device.colorIntr.ppx,
-                'rgb_cy': device.colorIntr.ppy,
-                'rgb_width': device.colorW,
-                'rgb_height': device.colorH,
-                'calibrateMat': mat4,
-                'positiveBoundaryCorner': self.pos,
-                'negativeBoundaryCorner': self.neg
-            }
+            config = device.getConfig()
+            config['calibrateMat'] = mat4
+            config['positiveBoundaryCorner'] = self.pos
+            config['negativeBoundaryCorner'] = self.neg
 
-            json.write(config, os.path.join(saveRootPath,
-                                            serial_num+'.config.json'))
-
-            colorArr = device.getPointsColors()
-            pointArr = device.getPoints()
-
-            pcdInfos.append((serial_num, colorArr, pointArr,
-                             mat4, self.pos, self.neg))
-
-        combineAllPcd = []
-        colorsAll = []
-        nomralsAll = []
-        for info in pcdInfos:
-            serial_num = info[0]
-            colorArr = info[1]
-            pointArr = info[2]
-            mat4 = info[3]
-            pos = info[4]
-            neg = info[5]
-
-            clipPoints = []
-            colors = []
-            nomrals = []
-
-            vaildPoints = []
-            # save pointcloud and vertexcolor
-            for index, points in enumerate(pointArr):
-
-                vec = np.array([points[0], points[1], points[2], 1.0])
-
-                alignedVec = mat4.dot(vec)
-
-                if(pos[0] < alignedVec[0] or
-                   pos[1] < alignedVec[1] or
-                   pos[2] < alignedVec[2] or
-                   neg[0] > alignedVec[0] or
-                   neg[1] > alignedVec[1] or
-                   neg[2] > alignedVec[2]):
-                    continue
-
-                color = (colorArr[index][2], colorArr[index]
-                         [1], colorArr[index][1])
-                colorsAll.append(color)
-                colors.append(color)
-
-                vaildPoints.append([
-                    alignedVec[0], alignedVec[1], alignedVec[2]
-                ])
-
-                combineAllPcd.append(
-                    (alignedVec[0], alignedVec[1], alignedVec[2]))
-
-                clipPoints.append(
-                    (alignedVec[0], alignedVec[1], alignedVec[2]))
-
-            # calc vertex normal
-            nomralArr = normalEstimate(vaildPoints, [
-                mat4[0][3], mat4[1][3], mat4[2][3]
-            ])
-            for n in nomralArr:
-                normal = (n[0], n[1], n[2])
-                nomrals.append(normal)
-                nomralsAll.append(normal)
-
-            ply.save(clipPoints, colors, nomrals, os.path.join(saveRootPath,
-                                                               serial_num+'.clipPointClouds'+'.ply'))
-
-        ply.save(combineAllPcd, colorsAll, nomralsAll, os.path.join(saveRootPath,
-                                                                    'combineAllPcd'+'.ply'))
-
-        print('save file spend', time.time()-start)
+            json.write(config,  os.path.join(
+                saveRootPath, config['time']+"."+config['realsense_serial_num']+'.config.json'))
 
 
 app = App()

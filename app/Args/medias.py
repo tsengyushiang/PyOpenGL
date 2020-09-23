@@ -7,6 +7,10 @@ def build_argparser():
     args.add_argument('-h', '--help', action='help', default='SUPPRESS')
 
     # custom command line input parameters
+    args.add_argument("-output", "--output",
+                      type=str, default='./output/realsense', help="where to save files.")
+    args.add_argument("-folder", "--folder", type=str,
+                      default='./medias/realsenseData/')
     args.add_argument("-model", "--model", type=str,
                       default='./medias/sample.obj')
     args.add_argument("-texture", "--texture", type=str,
