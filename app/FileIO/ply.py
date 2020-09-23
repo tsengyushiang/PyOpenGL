@@ -1,4 +1,10 @@
 import numpy as np
+import open3d as o3d
+
+
+def readPlyPoints(path):
+    pcd = o3d.io.read_point_cloud(path, format='ply')
+    return np.asarray(pcd.points), np.asarray(pcd.colors)
 
 
 def saveWOnomals(npArr, colorArr, path):

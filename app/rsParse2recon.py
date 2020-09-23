@@ -115,7 +115,7 @@ def main():
             q = r.as_quat()
             cameraPosStrArr.append(
                 "{0}.{1} {2} {3} {4} {5} {6} {7} {8}".format(
-                    time, rs, q[0], q[1], q[2], q[3], mat4[0][3], mat4[1][3], mat4[2][3]
+                    time, rs, mat4[0][3], mat4[1][3], mat4[2][3], q[0], q[1], q[2], q[3]
                 )
             )
 

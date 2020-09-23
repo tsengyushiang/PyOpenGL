@@ -1,15 +1,16 @@
-vertex_shader=\
-'''
+vertex_shader =\
+    '''
 #version 120
+uniform mat4 extrinct;
 
 varying vec4 color;
 void main() {
-    gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
+    gl_Position = gl_ModelViewProjectionMatrix * extrinct* gl_Vertex;
     color = gl_Color;
 }
 '''
-fragment_shader=\
-'''
+fragment_shader =\
+    '''
 #version 120
 
 varying vec4 color;
