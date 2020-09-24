@@ -50,7 +50,7 @@ class Device:
         self.depthH = int(self.colorH/self.downSampleFactor)
 
         self.pipeline = None
-        self.captureTime = 'new'
+        self.captureTime = '0'
         if(isPhysic):
             self.configPipeLine()
 
@@ -171,7 +171,7 @@ class Device:
             aligned_frames = self.align.process(frames)
 
             currentTime = datetime.datetime.now()
-            self.captureTime = currentTime.strftime("%Y%m%d_%H%M%S_%f")[:-3]
+            self.captureTime = currentTime.strftime("%Y%m%d%H%M%S%f")[:20]
 
             depth_frame = aligned_frames.get_depth_frame()
             color_frame = aligned_frames.get_color_frame()

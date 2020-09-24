@@ -39,12 +39,13 @@ def main():
                                     ]['config'] = json.read(fullpath)
 
     dataPath = join(args.folder, 'data')
-    maskfoder = dataPath+'/Output_AP1_Binary_Mask/'
-    pcdfolder = dataPath+'/Output_AP1_PointCloud/'
+    maskfoder = dataPath+'/Output_Binary_Mask/'
+    pcdfolder = dataPath+'/Output/'
     shrinkedfolder = dataPath+'/Output_AP1_Shrinked/'
-    uvfolder = dataPath+'/Output_AP1_UV/'
+    uvfolder = dataPath+'/Output_UV_PointCloud/'
     camerafolder = dataPath+'/Output_Camera_1080/'
     slamfolder = dataPath+'/Output_SLAM/'
+    transfolder = dataPath+'/ICP/'
     cameraTrajectory = slamfolder+'CameraTrajectory_withScale.txt'
     cameraPosStrArr = []
     if not os.path.exists(dataPath):
@@ -55,6 +56,7 @@ def main():
         os.makedirs(shrinkedfolder)
         os.makedirs(uvfolder)
         os.makedirs(camerafolder)
+        os.makedirs(transfolder)
         os.makedirs(slamfolder)
     else:
         print('Delete output folder first. none empty folder : ', dataPath)
@@ -95,18 +97,21 @@ def main():
             neg = config['negativeBoundaryCorner']
 
             # gen point cloud with input data
-            clipPoints, colors, nomrals, uvs, mask = genPly(
+            clipPoints, colors, transPoints,nomrals, uvs, mask = genPly(
                 iw, ih, colorArr, pointArr, mat4, pos, neg)
 
+            savePrefix = time+"_"+rs
+
             # save reconstruction format
-            ply.saveWOnomals(clipPoints, colors, pcdfolder+time+"_"+rs+'.ply')
-            ply.saveWOnomals(clipPoints, uvs, uvfolder+time+"_"+rs+'.ply')
-            cv2.imwrite(maskfoder+time+"_"+rs+'.png', mask)
+            ply.save(transPoints, colors,nomrals, transfolder+savePrefix+'.ply')
+            ply.saveWOnomals(clipPoints, colors, pcdfolder+savePrefix+'.ply')
+            ply.saveWOnomals(clipPoints, uvs, uvfolder+savePrefix+'.ply')
+            cv2.imwrite(maskfoder+savePrefix+'.png', mask)
 
             camera1080 = cv2.resize(
                 dicts[time][rs]['color'], (1440, 1080), interpolation=cv2.INTER_NEAREST)
 
-            cv2.imwrite(camerafolder+time+"_"+rs+'.png', camera1080)
+            cv2.imwrite(camerafolder+savePrefix+'.png', camera1080)
 
             r = R.from_matrix([[mat4[0][0], mat4[0][1], mat4[0][2]],
                                [mat4[1][0], mat4[1][1], mat4[1][2]],
@@ -135,13 +140,13 @@ def genPly(iw, ih, colorArr, pointArr, mat4, pos, neg):
     uvs = []
 
     mask = np.zeros((ih, iw, 3), dtype=float)
-    vaildPoints = []
+    transPoints = []
     # save pointcloud and vertexcolor
     for index, points in enumerate(pointArr):
 
         row = index / iw
         col = index % iw
-        # print(index, iw, ih, row, col)
+        #print(index, iw, ih, row, col)
 
         vec = np.array([points[0], points[1], points[2], 1.0])
 
@@ -164,10 +169,10 @@ def genPly(iw, ih, colorArr, pointArr, mat4, pos, neg):
 
         colors.append(color)
         uvs.append((
-            row, col, 0, 0
+            col/iw,(ih-row)/ih , 0, 0
         ))
 
-        vaildPoints.append([
+        transPoints.append([
             alignedVec[0], alignedVec[1], alignedVec[2]
         ])
 
@@ -175,16 +180,14 @@ def genPly(iw, ih, colorArr, pointArr, mat4, pos, neg):
             (points[0], points[1], points[2]))
 
     # calc vertex normal
-    '''
-    nomralArr = normalEstimate(vaildPoints, [
+    nomralArr = normalEstimate(transPoints, [
         mat4[0][3], mat4[1][3], mat4[2][3]
     ])
     for n in nomralArr:
         normal = (n[0], n[1], n[2])
         nomrals.append(normal)
-    '''
 
-    return clipPoints, colors, clipPoints, uvs, mask
+    return clipPoints, colors, transPoints,nomrals, uvs, mask
 
 
 main()
