@@ -13,7 +13,7 @@ class Camera:
 
         self.minAzimuthangle = 0
         self.maxAzimuthangle = 180
-        self.zoomSensitivity = 0.5
+        self.zoomSensitivity = 0.1
 
         self.polarAngle = 0
         self.azimuthangle = 1

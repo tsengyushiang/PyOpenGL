@@ -13,9 +13,10 @@ from opengl.Texture import *
 from opengl.Mesh import *
 from opengl.Uniform import *
 
-from opengl.Geometry.ObjGeometry import *
-import shaders.PhongLighting as myShader
+from opengl.Geometry.OpenMeshGeometry import *
+import shaders.PhongLightingTransMat as myShader
 import shaders.realsensePointCloud as pcdShader
+from Algorithm.open3D.pointCloud import normalEstimate
 
 from Args.medias import build_argparser
 args = build_argparser().parse_args()
@@ -31,6 +32,7 @@ scene = QtGLScene(ui.openGLWidget)
 uniform = Uniform()
 uniform.addvec3('viewPos', [0, 0, -1])
 
+
 def mainloop():
     uniform.setValue('viewPos', [
         scene.camera.position[0],
@@ -39,15 +41,18 @@ def mainloop():
     scene.startDraw()
     scene.endDraw()
 
+
 MainWindow.show()
 
-# read shader
+geo = OpenMeshGeometry(args.highResModel)
+
+normalizeMat = geo.getNormalizeMat()
+uniform.addMat4('normalizeMat', normalizeMat)
+
 mat = ShaderMaterial(myShader.vertex_shader,
                      myShader.fragment_shader,
                      uniform)
 
-# read obj file
-geo = ObjGeometry(args.model)
 mesh = Mesh(mat, geo)
 scene.add(mesh)
 
