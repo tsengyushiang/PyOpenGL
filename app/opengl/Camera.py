@@ -23,6 +23,7 @@ class Camera:
         self.h = height
 
         self.center = (0.0, 0.0, 0.0)
+        self.position = (0.0, 0.0, 0.0)
 
         self.mouseCoord = None
 
@@ -44,9 +45,9 @@ class Camera:
         glViewport(0, 0, self.w, self.h)
         gluPerspective(60.0, float(self.w)/float(self.h), 0.01, 100.0)
 
-        coord = Spherical2Cartesian(
+        self.position = Spherical2Cartesian(
             (self.radius, self.polarAngle, self.azimuthangle))
-        gluLookAt(coord[0], coord[2], coord[1],  self.center[0],
+        gluLookAt(self.position[0], self.position[2], self.position[1],  self.center[0],
                   self.center[1], self.center[2],  0.0, 1.0, 0.0)
 
     def handlGLUTMouseClick(self, button, x, y):

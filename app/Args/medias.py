@@ -11,6 +11,8 @@ def build_argparser():
                       type=str, default='./output/realsense', help="where to save files.")
     args.add_argument("-folder", "--folder", type=str,
                       default='./medias/realsenseData/')
+    args.add_argument("-highResModel", "--highResModel", type=str,
+                      default='./medias/neptune_200k_org.obj')
     args.add_argument("-model", "--model", type=str,
                       default='./medias/sample.obj')
     args.add_argument("-texture", "--texture", type=str,
