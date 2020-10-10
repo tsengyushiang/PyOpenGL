@@ -12,7 +12,7 @@ def build_argparser():
     args.add_argument("-folder", "--folder", type=str,
                       default='./medias/realsenseData/')
     args.add_argument("-highResModel", "--highResModel", type=str,
-                      default='./medias/neptune_200k_org_normal.obj')
+                      default='./medias/neptune_200k_org.obj')
     args.add_argument("-model", "--model", type=str,
                       default='./medias/sample.obj')
     args.add_argument("-texture", "--texture", type=str,

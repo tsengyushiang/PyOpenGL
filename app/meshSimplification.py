@@ -3,7 +3,7 @@ import sys
 import json
 from dotmap import DotMap
 
-from qtLayout.twoWindow import *
+from qtLayout.MeshSimplifacation import *
 from PyQt5.QtCore import *
 
 from opengl.Scene.QtGLScene import *
@@ -16,7 +16,6 @@ from opengl.Uniform import *
 from opengl.Geometry.OpenMeshGeometry import *
 import shaders.PhongLightingTransMat as myShader
 import shaders.realsensePointCloud as pcdShader
-from Algorithm.open3D.pointCloud import normalEstimate
 
 from Args.medias import build_argparser
 args = build_argparser().parse_args()
@@ -30,21 +29,17 @@ scene = QtGLScene(ui.openGLWidget)
 
 # uniform
 uniform = Uniform()
-uniform.addvec3('viewPos', [0, 0, -1])
-
-
-def mainloop():
-    uniform.setValue('viewPos', [
-        scene.camera.position[0],
-        scene.camera.position[1],
-        scene.camera.position[2]])
-    scene.startDraw()
-    scene.endDraw()
-
 
 MainWindow.show()
 
+uniform.addvec3('viewPos', [0, 0, -1])
 geo = OpenMeshGeometry(args.highResModel)
+
+def onHandleSlider(value):
+    range = ui.horizontalScrollBar.maximum()-ui.horizontalScrollBar.minimum()
+    geo.setLevel(float(value)/range)
+        
+ui.horizontalScrollBar.valueChanged.connect(onHandleSlider)
 
 normalizeMat = geo.getNormalizeMat()
 uniform.addMat4('normalizeMat', normalizeMat)
@@ -56,6 +51,18 @@ mat = ShaderMaterial(myShader.vertex_shader,
 mesh = Mesh(mat, geo)
 scene.add(mesh)
 
+i = 100
+def mainloop():
+    global i
+    uniform.setValue('viewPos', [
+        scene.camera.position[0],
+        scene.camera.position[1],
+        scene.camera.position[2]])
+    scene.startDraw()
+    if i>0:
+        geo.collapseFirstEdge()
+        i=i-1
+    scene.endDraw()
 timer = QTimer(MainWindow)
 timer.timeout.connect(mainloop)
 timer.start(1)
