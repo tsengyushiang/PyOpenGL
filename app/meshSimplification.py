@@ -51,7 +51,6 @@ mat = ShaderMaterial(myShader.vertex_shader,
 mesh = Mesh(mat, geo)
 scene.add(mesh)
 
-i = 100
 def mainloop():
     global i
     uniform.setValue('viewPos', [
@@ -59,9 +58,6 @@ def mainloop():
         scene.camera.position[1],
         scene.camera.position[2]])
     scene.startDraw()
-    if i>0:
-        geo.collapseFirstEdge()
-        i=i-1
     scene.endDraw()
 timer = QTimer(MainWindow)
 timer.timeout.connect(mainloop)

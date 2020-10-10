@@ -3,6 +3,32 @@ from OpenGL.GL import *
 from openmesh import *
 import numpy as np
 import time
+import math 
+
+def DEBUG_MESH():
+    mesh = TriMesh()
+    vh0 = mesh.add_vertex([0, 1, 0])
+    vh1 = mesh.add_vertex([1, 0.2, 0])
+    vh2 = mesh.add_vertex([1.5, 1, 0])
+    vh3 = mesh.add_vertex([0,-1, 0])
+    vh4 = mesh.add_vertex([2,-1, 0])
+    #convex
+    vh5 = mesh.add_vertex([3,0.5, 0])    
+    # not convex
+    #vh5 = mesh.add_vertex([1.3,0, 0])
+
+    vh6  = mesh.add_vertex([1, -0.2, 0])
+
+    fh4 = mesh.add_face(vh1, vh6, vh5)
+    fh0 = mesh.add_face(vh0, vh1, vh2)
+    fh2 = mesh.add_face(vh0, vh3, vh1)
+    fh3 = mesh.add_face(vh2, vh1, vh5)
+
+    fh5 = mesh.add_face(vh1, vh3, vh6)
+    fh6 = mesh.add_face(vh6, vh3, vh4)
+    fh7 = mesh.add_face(vh6, vh4, vh5)
+    return mesh
+
 
 # log all member function
 def DEBUG_SHOWATTRIBUTE(obj):
@@ -16,21 +42,116 @@ class OpenMeshGeometry:
 
         #self.mesh = read_trimesh(filename, vertex_normal=True)
         self.mesh = read_trimesh(filename)
+
+        #self.mesh = DEBUG_MESH()
         #DEBUG_SHOWATTRIBUTE(self.mesh)
+
         self.updateVertexNormals()
+
+    def isConvexMesh(self,mesh):
+        
+        def calcAngle(vector_1,vector_2):
+            unit_vector_1 = vector_1 / np.linalg.norm(vector_1)
+            unit_vector_2 = vector_2 / np.linalg.norm(vector_2)
+            dot_product = np.dot(unit_vector_1, unit_vector_2)
+            return  math.degrees(np.arccos(dot_product))
+
+        boundaryhalfEdge = None
+        # get first boundary vertex       
+        for eh in mesh.halfedges():
+            isBoundary = mesh.is_boundary(eh)
+            if isBoundary :
+                boundaryhalfEdge = eh
+                break
+        
+        # go through every boundary halfedge
+        orderedPoints = []
+        startEdgeId = boundaryhalfEdge.idx()
+        while(True):
+            vh = mesh.from_vertex_handle(boundaryhalfEdge)
+            p1 = mesh.point(vh)
+
+            # out halfedge to get neighbor vertex for calc angle
+            neighborVecs = []
+            for heh in mesh.voh(vh):
+                vh = mesh.to_vertex_handle(heh)
+                p2 = mesh.point(vh)
+                neighborVecs.append(p2-p1)
+            
+            innerAngle = 0
+            for i in range(1,len(neighborVecs)):
+                v1 = neighborVecs[i-1]
+                v2 = neighborVecs[i]
+                innerAngle += calcAngle(v1,v2)
+
+            # inner angel > 180 mean is not convex polygon
+            if innerAngle>180:
+                return False
+
+            # check next boundary vertex untill loop end
+            boundaryhalfEdge = mesh.next_halfedge_handle(boundaryhalfEdge)
+            if boundaryhalfEdge.idx() == startEdgeId:
+                break
+        
+        return True
 
     def collapseFirstEdge(self):
 
-        i = 3000
+        i = 10000
         for eh in self.mesh.edges():
-            self.collapseEdge(eh,useMidPoint=True)
+            isConvex = self.mesh.edge_property('convex',eh)
+
+            if(isConvex == False):
+                continue
             
+            success = self.collapseEdge(eh,useMidPoint=True)                
+
+            if not success:
+                continue
+
             i=i-1
             if i<0:
                 break
-        
+
         self.mesh.garbage_collection()
-        self.init()
+
+    def is_merge_ok(self,edgehandle):
+        # create submesh for convex polygon checking
+        he0 = self.mesh.halfedge_handle(edgehandle,0)
+        vh0 = self.mesh.to_vertex_handle(he0)
+        vh1 = self.mesh.from_vertex_handle(he0)
+        
+        fhs = []
+        for fh in self.mesh.vf(vh0):
+            fhs.append(fh)      
+
+        # don't add duplicate face
+        for fh in self.mesh.vf(vh1):
+
+            hasVh0 = False
+            for vh in self.mesh.fv(fh):
+                if(vh.idx()==vh0.idx()):
+                    hasVh0 = True
+                    break
+
+            if not hasVh0:
+                fhs.append(fh)
+
+        vhs = {}
+        submesh = TriMesh()
+        for fh in fhs:
+            fvhs = []            
+            for vh in self.mesh.fv(fh):
+                id = str(vh.idx())
+                if id not in vhs:
+                    p = self.mesh.point(vh)
+                    vhs[id] = submesh.add_vertex(p)
+                fvhs.append(vhs[id])
+
+            submesh.add_face(fvhs)
+
+        isConvexMesh = self.isConvexMesh(submesh)
+        return isConvexMesh
 
     def collapseEdge(self,edgehandle,useMidPoint=True,position=[0,0,0]):
 
@@ -43,7 +164,7 @@ class OpenMeshGeometry:
         if useMidPoint:
             midPoint = (self.mesh.point(vh0)+self.mesh.point(vh1))/2
 
-        if self.mesh.is_collapse_ok(he0):
+        if self.mesh.is_collapse_ok(he0) and self.is_merge_ok(edgehandle):
             self.mesh.collapse(he0)
             vh0 = self.mesh.to_vertex_handle(he0)
             self.mesh.update_normal(vh0)
@@ -52,6 +173,16 @@ class OpenMeshGeometry:
                 self.mesh.set_point(vh0,midPoint)
             else:
                 self.mesh.set_point(vh0,position)
+            
+            for eh in self.mesh.ve(vh0):
+                self.mesh.set_edge_property('convex',eh,None)
+            
+            return True
+
+        else:
+            self.mesh.set_edge_property('convex',edgehandle,False)
+            return False
+
        
     def deleteVertices(self):
         readyToDelete = []
@@ -127,9 +258,13 @@ class OpenMeshGeometry:
         return vao,len(indices)*3
 
     def init(self):
-        vao,faces = self.genMeshVAO()
-        self.LODvaos.append((vao,faces))
-        self.level = len(self.LODvaos)-1
+        
+        for i in range(2):
+            vao,faces = self.genMeshVAO()
+            self.LODvaos.append((vao,faces))
+            self.level = len(self.LODvaos)-1
+            self.collapseFirstEdge()
+
 
     def draw(self):
 
@@ -144,4 +279,3 @@ class OpenMeshGeometry:
 
     def setLevel(self,zero2one):
         self.level = int((len(self.LODvaos)-1)*zero2one)
-        print(len(self.LODvaos)-1,self.level)
