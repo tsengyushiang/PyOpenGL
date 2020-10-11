@@ -51,13 +51,21 @@ mat = ShaderMaterial(myShader.vertex_shader,
 mesh = Mesh(mat, geo)
 scene.add(mesh)
 
+updateSimplification = True
 def mainloop():
-    global i
+    global i,updateSimplification
     uniform.setValue('viewPos', [
         scene.camera.position[0],
         scene.camera.position[1],
         scene.camera.position[2]])
     scene.startDraw()
+
+    start = time.time()    
+    if updateSimplification:
+        updateSimplification = geo.collapseFirstEdge()
+        geo.init()
+    print('collapse a edge cost ',time.time()-start)
+    
     scene.endDraw()
 timer = QTimer(MainWindow)
 timer.timeout.connect(mainloop)

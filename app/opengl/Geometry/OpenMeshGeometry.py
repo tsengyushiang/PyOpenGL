@@ -97,23 +97,22 @@ class OpenMeshGeometry:
 
     def collapseFirstEdge(self):
 
-        i = 10000
         for eh in self.mesh.edges():
             isConvex = self.mesh.edge_property('convex',eh)
 
             if(isConvex == False):
                 continue
+
+            success = self.collapseEdge(eh,useMidPoint=True)    
             
-            success = self.collapseEdge(eh,useMidPoint=True)                
+            # is slow when mesh is big
+            self.mesh.garbage_collection()        
+            
+            if success:
+                #print(self.mesh.n_edges(),self.mesh.n_vertices())
+                return True
 
-            if not success:
-                continue
-
-            i=i-1
-            if i<0:
-                break
-
-        self.mesh.garbage_collection()
+        return False
 
     def is_merge_ok(self,edgehandle):
         # create submesh for convex polygon checking
@@ -258,17 +257,14 @@ class OpenMeshGeometry:
         return vao,len(indices)*3
 
     def init(self):
-        
-        for i in range(2):
-            vao,faces = self.genMeshVAO()
-            self.LODvaos.append((vao,faces))
-            self.level = len(self.LODvaos)-1
-            self.collapseFirstEdge()
 
+        vao,faces = self.genMeshVAO()
+        self.LODvaos.append((vao,faces))
 
     def draw(self):
 
-        vao,faces = self.LODvaos[self.level]
+        level = int((len(self.LODvaos)-1)*self.level)
+        vao,faces = self.LODvaos[level]
 
         glBindVertexArray(vao)
         glEnable(GL_CULL_FACE)
@@ -278,4 +274,4 @@ class OpenMeshGeometry:
                 None)  # This line does work too!
 
     def setLevel(self,zero2one):
-        self.level = int((len(self.LODvaos)-1)*zero2one)
+        self.level = zero2one
