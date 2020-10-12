@@ -105,11 +105,9 @@ class OpenMeshGeometry:
 
             success = self.collapseEdge(eh,useMidPoint=True)    
             
-            # is slow when mesh is big
-            self.mesh.garbage_collection()        
-            
             if success:
                 #print(self.mesh.n_edges(),self.mesh.n_vertices())
+                self.mesh.garbage_collection()
                 return True
 
         return False
