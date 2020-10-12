@@ -171,9 +171,12 @@ class OpenMeshGeometry:
             else:
                 self.mesh.set_point(vh0,position)
             
-            for eh in self.mesh.ve(vh0):
-                self.mesh.set_edge_property('convex',eh,None)
-            
+            # recompute affect edges
+            for vh in self.mesh.vv(vh0):
+                for eh in self.mesh.ve(vh):
+                    self.mesh.set_edge_property('convex',eh,None)
+
+
             return True
 
         else:
