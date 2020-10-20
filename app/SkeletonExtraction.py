@@ -62,8 +62,12 @@ def mainloop():
 
     start = time.time()    
     if updateSimplification:
-        updateSimplification = geo.contraction()
-        geo.init()
+        try:
+            updateSimplification = geo.contraction()
+            geo.init()
+            print('success')
+        except:
+            updateSimplification=False
     #print('collapse a edge cost ',time.time()-start)
     
     scene.endDraw()

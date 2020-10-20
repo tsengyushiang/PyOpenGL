@@ -58,6 +58,13 @@ def calcAngle(vector_1,vector_2):
     dot_product = np.dot(unit_vector_1, unit_vector_2)
     return  math.degrees(np.arccos(dot_product))
 
+def area(x1, y1, z1, x2, y2, z2): 
+    area = math.sqrt((y1 * z2 - y2 * z1) ** 2 
+           + (x1 * z2 - x2 * z1) ** 2 + 
+           (x1 * y2 - x2 * y1) ** 2) 
+    area = area / 2
+    return area 
+
 class OpenMeshGeometry:
     def __init__(self, filename):
         self.level = 0
@@ -70,6 +77,10 @@ class OpenMeshGeometry:
         #DEBUG_SHOWATTRIBUTE(self.mesh)
 
         self.updateVertexNormals()
+
+        #contractionEnergy
+        self.WL = 1e-3*self.getAverageFaceArea()
+        self.sL = 2.0
 
     def isConvexMesh(self,mesh):
 
@@ -112,64 +123,105 @@ class OpenMeshGeometry:
         
         return True
 
-    def contraction(self):
+    def getAverageFaceArea(self):
+        mat4 = self.getNormalizeMat()
+        areaSum = 0
+        count = 0
+        for fh in self.mesh.faces():
+            tri = []
+            for vh in self.mesh.fv(fh):
+                tri.append(self.mesh.point(vh))
+            
+            # calc area
+            count = count+1
+
+            a = tri[0]-tri[2]
+            b = tri[1]-tri[2]
+            areaSum = areaSum + area(a[0],a[1],a[2],b[0],b[1],b[2])
         
-        try :
-            verticesNumber = self.mesh.n_vertices()
+        return areaSum/count
 
-            # solve least-sqare ax=b to find optimal x for each vertex
-            # Skeleton Extraction ref : http://graphics.csie.ncku.edu.tw/Skeleton/skeleton-paperfinal.pdf
-            # Least-squares Meshes ref : https://igl.ethz.ch/projects/Laplacian-mesh-processing/ls-meshes/ls-meshes.pdf
+    def contraction(self):       
+    
+        verticesNumber = self.mesh.n_vertices()
+
+        # solve least-sqare ax=b to find optimal x for each vertex
+        # Skeleton Extraction ref : http://graphics.csie.ncku.edu.tw/Skeleton/skeleton-paperfinal.pdf
+        # Least-squares Meshes ref : https://igl.ethz.ch/projects/Laplacian-mesh-processing/ls-meshes/ls-meshes.pdf
+        
+        # topolog weight sarse matrix
+        weightConstain = SparseMat()   
+        targetPoint = SparseMat()
+
+        for vh in self.mesh.vertices():
+
+            oneRingArea = 0
+            for fh in self.mesh.vf(vh):
+                tri = []
+                for vfh in self.mesh.fv(fh):
+                    tri.append(self.mesh.point(vfh))                    
+                # calc area
+                a = tri[0]-tri[2]
+                b = tri[1]-tri[2]
+                oneRingArea = oneRingArea + area(a[0],a[1],a[2],b[0],b[1],b[2])
             
-            # topolog weight sarse matrix
-            weightConstain = SparseMat()   
-            targetPoint = SparseMat()
-
-            for vh in self.mesh.vertices():
-                p0 = self.mesh.point(vh)
-                sumWeights = 0
-                # calc conformal weight cotA+cotB
-                oneRingVertexHandles = []
-                for vvh in self.mesh.vv(vh):
-                    oneRingVertexHandles.append((
-                        vvh,self.mesh.point(vvh)
-                    ))
-
-                variant = len(oneRingVertexHandles)
-                for index in range(variant):
-                    _,p1 = oneRingVertexHandles[(index+1)%variant]
-                    vh0,p = oneRingVertexHandles[index]
-                    _,p_1 = oneRingVertexHandles[(index-1)%variant]
-                    angleA = calcAngle(p0-p1,p-p1)
-                    angleB = calcAngle(p0-p_1,p-p_1)
-                    cotA = 1/math.tan(math.radians(angleA))
-                    cotB =1/math.tan(math.radians(angleB))
-
-                    # add topology weight
-                    weightConstain.insert(vh.idx(),vh0.idx(),cotA + cotB)
-                    sumWeights = sumWeights + cotA + cotB
-                
-                #add weight balance
-                weightConstain.insert(vh.idx(),vh.idx(),-sumWeights)
-
-                # add constrains
-                weightConstain.insert(vh.idx()+verticesNumber,vh.idx(),1)
-                targetPoint.insert(vh.idx()+verticesNumber,0,p0[0])
-                targetPoint.insert(vh.idx()+verticesNumber,1,p0[1])
-                targetPoint.insert(vh.idx()+verticesNumber,2,p0[2])
+            origionArea = self.mesh.vertex_property('one-ring-area',vh)
+            if origionArea==None:
+                self.mesh.set_vertex_property('one-ring-area',vh,oneRingArea)
+                origionArea = oneRingArea
             
-            b = targetPoint.mat((2*verticesNumber,3))
-            A = weightConstain.mat((2*verticesNumber,verticesNumber))
+            WH = self.mesh.vertex_property('WH',vh)
+            if WH==None:
+                WH = 1.0
 
-            #print(A.toarray().shape,b.shape)
-            x = spsolve(A.T*A,A.T*b).toarray()
+            if oneRingArea!=0:
+                self.mesh.set_vertex_property('WH',vh, WH * math.sqrt(origionArea/oneRingArea))
 
-            # update vertex position
-            for vh in self.mesh.vertices():
-                self.mesh.set_point(vh,x[vh.idx()])
-            return True
-        except:
-            return False        
+            p0 = self.mesh.point(vh)
+            sumWeights = 0
+            # calc conformal weight cotA+cotB
+            oneRingVertexHandles = []
+            for vvh in self.mesh.vv(vh):
+                oneRingVertexHandles.append((
+                    vvh,self.mesh.point(vvh)
+                ))
+
+            variant = len(oneRingVertexHandles)
+            for index in range(variant):
+                _,p1 = oneRingVertexHandles[(index+1)%variant]
+                vh0,p = oneRingVertexHandles[index]
+                _,p_1 = oneRingVertexHandles[(index-1)%variant]
+                angleA = calcAngle(p0-p1,p-p1)
+                angleB = calcAngle(p0-p_1,p-p_1)
+                cotA = 1/math.tan(math.radians(angleA))
+                cotB =1/math.tan(math.radians(angleB))
+
+                # add topology weight
+                weightConstain.insert(vh.idx(),vh0.idx(),(cotA + cotB)*self.WL)
+                sumWeights = sumWeights + cotA + cotB
+            
+            #add weight balance
+            weightConstain.insert(vh.idx(),vh.idx(),-sumWeights*self.WL)
+
+            # add constrains
+            weightConstain.insert(vh.idx()+verticesNumber,vh.idx(),1*WH)
+            targetPoint.insert(vh.idx()+verticesNumber,0,p0[0]*WH)
+            targetPoint.insert(vh.idx()+verticesNumber,1,p0[1]*WH)
+            targetPoint.insert(vh.idx()+verticesNumber,2,p0[2]*WH)
+        
+        b = targetPoint.mat((2*verticesNumber,3))
+        A = weightConstain.mat((2*verticesNumber,verticesNumber))
+
+        #print(A.toarray().shape,b.shape)
+        x = spsolve(A.T*A,A.T*b).toarray()
+
+        self.WL = self.WL * self.sL
+
+        # update vertex position
+        for vh in self.mesh.vertices():
+            self.mesh.set_point(vh,x[vh.idx()])
+        return True            
+    
 
     def collapseFirstEdge(self):
 
