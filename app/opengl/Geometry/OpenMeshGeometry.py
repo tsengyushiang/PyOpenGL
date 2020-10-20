@@ -29,11 +29,16 @@ def DEBUG_MESH():
     fh7 = mesh.add_face(vh6, vh4, vh5)
     return mesh
 
-
 # log all member function
 def DEBUG_SHOWATTRIBUTE(obj):
     for att in dir(obj):
         print (att, getattr(obj,att))
+
+def calcAngle(vector_1,vector_2):
+    unit_vector_1 = vector_1 / np.linalg.norm(vector_1)
+    unit_vector_2 = vector_2 / np.linalg.norm(vector_2)
+    dot_product = np.dot(unit_vector_1, unit_vector_2)
+    return  math.degrees(np.arccos(dot_product))
 
 class OpenMeshGeometry:
     def __init__(self, filename):
@@ -49,12 +54,6 @@ class OpenMeshGeometry:
         self.updateVertexNormals()
 
     def isConvexMesh(self,mesh):
-        
-        def calcAngle(vector_1,vector_2):
-            unit_vector_1 = vector_1 / np.linalg.norm(vector_1)
-            unit_vector_2 = vector_2 / np.linalg.norm(vector_2)
-            dot_product = np.dot(unit_vector_1, unit_vector_2)
-            return  math.degrees(np.arccos(dot_product))
 
         boundaryhalfEdge = None
         # get first boundary vertex       
@@ -94,6 +93,64 @@ class OpenMeshGeometry:
                 break
         
         return True
+
+    def contraction(self):
+
+        try :
+            verticesNumber = self.mesh.n_vertices()
+
+            # solve least-sqare ax=b to find optimal x for each vertex
+            # Skeleton Extraction ref : http://graphics.csie.ncku.edu.tw/Skeleton/skeleton-paperfinal.pdf
+            # Least-squares Meshes ref : https://igl.ethz.ch/projects/Laplacian-mesh-processing/ls-meshes/ls-meshes.pdf
+            
+            topologyWeights = np.zeros((verticesNumber,verticesNumber),dtype=float)
+            topologyConstarins = np.zeros((verticesNumber,verticesNumber),dtype=float)
+            
+            point = np.zeros((verticesNumber,3),dtype=float)
+            constarinsPoint = []
+
+            for vh in self.mesh.vertices():
+                topologyConstarins[vh.idx()][vh.idx()]=1
+                
+                p0 = self.mesh.point(vh)
+                sumWeights = 0
+                # calc conformal weight cotA+cotB
+                oneRingVertexHandles = []
+                for vvh in self.mesh.vv(vh):
+                    oneRingVertexHandles.append((
+                        vvh,self.mesh.point(vvh)
+                    ))
+
+                variant = len(oneRingVertexHandles)
+                for index in range(variant):
+                    _,p1 = oneRingVertexHandles[(index+1)%variant]
+                    vh0,p = oneRingVertexHandles[index]
+                    _,p_1 = oneRingVertexHandles[(index-1)%variant]
+                    angleA = calcAngle(p0-p1,p-p1)
+                    angleB = calcAngle(p0-p_1,p-p_1)
+                    cotA = 1/math.tan(math.radians(angleA))
+                    cotB =1/math.tan(math.radians(angleB))
+
+                    topologyWeights[vh.idx()][vh0.idx()] = cotA + cotB
+                    sumWeights = sumWeights + cotA + cotB
+
+                topologyWeights[vh.idx()][vh.idx()] = -sumWeights
+
+                constarinsPoint.append(p0)
+            
+            b = np.concatenate((point, np.array(constarinsPoint)), axis=0)
+            a = np.concatenate((topologyWeights, topologyConstarins), axis=0)
+            print(a,b)
+            x, residuals, rank, s = np.linalg.lstsq(a, b)
+
+            # update vertex position
+            for vh in self.mesh.vertices():
+                self.mesh.set_point(vh,x[vh.idx()])
+            return True
+        except :
+            print('contraction error occur.')
+            return False
+        
 
     def collapseFirstEdge(self):
 
