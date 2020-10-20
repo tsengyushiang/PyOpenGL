@@ -4,6 +4,24 @@ from openmesh import *
 import numpy as np
 import time
 import math 
+from scipy import sparse
+from scipy.sparse.linalg import spsolve
+
+class SparseMat:
+    def __init__(self):
+        self.row=[]
+        self.col=[]
+        self.data=[]
+    
+    def insert(self,row,col,data):
+        self.row.append(row)
+        self.col.append(col)
+        self.data.append(data)
+
+    def mat(self,shape):
+        return sparse.csr_matrix((self.data, (self.row, self.col)), shape)
+        
+
 
 def DEBUG_MESH():
     mesh = TriMesh()
@@ -95,7 +113,7 @@ class OpenMeshGeometry:
         return True
 
     def contraction(self):
-
+        
         try :
             verticesNumber = self.mesh.n_vertices()
 
@@ -103,15 +121,11 @@ class OpenMeshGeometry:
             # Skeleton Extraction ref : http://graphics.csie.ncku.edu.tw/Skeleton/skeleton-paperfinal.pdf
             # Least-squares Meshes ref : https://igl.ethz.ch/projects/Laplacian-mesh-processing/ls-meshes/ls-meshes.pdf
             
-            topologyWeights = np.zeros((verticesNumber,verticesNumber),dtype=float)
-            topologyConstarins = np.zeros((verticesNumber,verticesNumber),dtype=float)
-            
-            point = np.zeros((verticesNumber,3),dtype=float)
-            constarinsPoint = []
+            # topolog weight sarse matrix
+            weightConstain = SparseMat()   
+            targetPoint = SparseMat()
 
             for vh in self.mesh.vertices():
-                topologyConstarins[vh.idx()][vh.idx()]=1
-                
                 p0 = self.mesh.point(vh)
                 sumWeights = 0
                 # calc conformal weight cotA+cotB
@@ -131,26 +145,31 @@ class OpenMeshGeometry:
                     cotA = 1/math.tan(math.radians(angleA))
                     cotB =1/math.tan(math.radians(angleB))
 
-                    topologyWeights[vh.idx()][vh0.idx()] = cotA + cotB
+                    # add topology weight
+                    weightConstain.insert(vh.idx(),vh0.idx(),cotA + cotB)
                     sumWeights = sumWeights + cotA + cotB
+                
+                #add weight balance
+                weightConstain.insert(vh.idx(),vh.idx(),-sumWeights)
 
-                topologyWeights[vh.idx()][vh.idx()] = -sumWeights
-
-                constarinsPoint.append(p0)
+                # add constrains
+                weightConstain.insert(vh.idx()+verticesNumber,vh.idx(),1)
+                targetPoint.insert(vh.idx()+verticesNumber,0,p0[0])
+                targetPoint.insert(vh.idx()+verticesNumber,1,p0[1])
+                targetPoint.insert(vh.idx()+verticesNumber,2,p0[2])
             
-            b = np.concatenate((point, np.array(constarinsPoint)), axis=0)
-            a = np.concatenate((topologyWeights, topologyConstarins), axis=0)
-            print(a,b)
-            x, residuals, rank, s = np.linalg.lstsq(a, b)
+            b = targetPoint.mat((2*verticesNumber,3))
+            A = weightConstain.mat((2*verticesNumber,verticesNumber))
+
+            #print(A.toarray().shape,b.shape)
+            x = spsolve(A.T*A,A.T*b).toarray()
 
             # update vertex position
             for vh in self.mesh.vertices():
                 self.mesh.set_point(vh,x[vh.idx()])
             return True
-        except :
-            print('contraction error occur.')
-            return False
-        
+        except:
+            return False        
 
     def collapseFirstEdge(self):
 
