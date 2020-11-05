@@ -26,4 +26,20 @@ def build_argparser():
     args.add_argument("-depth", "--depth", type=str,
                       default='./medias/realsenseData/depth16.png')
 
+    # two side hand data
+    args.add_argument("-color1", "--color1", type=str,
+                      default='./medias/depthhull/20201029150546098733.634204003874.color.png')
+    args.add_argument("-config1", "--config1", type=str,
+                      default='./medias/depthhull/20201029150546098733.634204003874.config.json')
+    args.add_argument("-depth1", "--depth1", type=str,
+                      default='./medias/depthhull/20201029150546098733.634204003874.depth16.png')
+    args.add_argument("-color2", "--color2", type=str,
+                      default='./medias/depthhull/20201029150625453271.634204003874.color.png')
+    args.add_argument("-config2", "--config2", type=str,
+                      default='./medias/depthhull/20201029150625453271.634204003874.config.json')
+    args.add_argument("-depth2", "--depth2", type=str,
+                      default='./medias/depthhull/20201029150625453271.634204003874.depth16.png')
+
+
+
     return parser

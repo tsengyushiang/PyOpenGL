@@ -41,67 +41,40 @@ timer = QTimer(MainWindow)
 timer.timeout.connect(mainloop)
 timer.start(1)
 
-
-def genPointCloudMesh(h, w, intr, color, depth, transform):
-    texColor = Texture(color)
-    texDepth = Texture(color)
-
-    # add scene
-    uniform = Uniform()
-    uniform.addTexture('texColor', texColor)
-    uniform.addTexture('texDepth', texDepth)
-    uniform.addFloat('fx', intr.fx)
-    uniform.addFloat('fy', intr.fy)
-    uniform.addFloat('ppx', intr.ppx)
-    uniform.addFloat('ppy', intr.ppy)
-    uniform.addFloat('w', w)
-    uniform.addFloat('h', h)
-    uniform.addvec3('bboxPos', [1, 1, 1])
-    uniform.addvec3('bboxNeg', [-1, -1, -1])
-    uniform.addMat4('extrinct', np.array(transform))
-
-    mat = ShaderMaterial(pcdShader.vertex_shader,
-                         pcdShader.fragment_shader,
-                         uniform)
-
-    pointCloudGeo = DepthArrGeometry(depth)
-
-    return Mesh(mat, pointCloudGeo)
-
-
-# uniform
-img = cv2.imread(args.texture)
-tex = Texture(img)
-tex2 = Texture(args.texture2)
-
-uniform = Uniform()
-uniform.addTexture('texColor', tex)
-uniform.addTexture('texDepth', tex2)
-
-# read shader
-mat = ShaderMaterial(myShader.vertex_shader,
-                     myShader.fragment_shader,
-                     uniform)
-
-# read obj file
-geo = ObjGeometry(args.model)
-
-mesh = Mesh(mat, geo)
-
-scene.add(mesh)
-
-with open(args.config) as f:
+with open(args.config1) as f:
     data = json.load(f)
 
-depth16 = cv2.imread(args.depth, cv2.IMREAD_UNCHANGED)
-color = cv2.imread(args.color, cv2.IMREAD_UNCHANGED)
-intr = DotMap()
-intr.fx = data['depth_fx']
-intr.fy = data['depth_fy']
-intr.ppx = data['depth_cx']
-intr.ppy = data['depth_cy']
-pcds = genPointCloudMesh(
-    data['depth_height'], data['depth_width'], intr, color, depth16.flatten()*data['depth_scale'], data['calibrateMat'])
-scene2.add(pcds)
+with open(args.config2) as f:
+    data2 = json.load(f)
+
+
+depth1 = cv2.imread(args.depth1, cv2.IMREAD_UNCHANGED).astype('uint8')
+depth2 = cv2.imread(args.depth2, cv2.IMREAD_UNCHANGED).astype('uint8')
+
+w = 512
+h = 512
+d = 512
+
+# add scene
+uniform = Uniform()
+uniform.addTexture('texDepth1', depth1)
+uniform.addTexture('texDepth2', depth2)
+uniform.addFloat('fx', data['depth_fx'])
+uniform.addFloat('fy', data['depth_fy'])
+uniform.addFloat('ppx', data['depth_cx'])
+uniform.addFloat('ppy', data['depth_cy'])
+uniform.addFloat('w', w)
+uniform.addFloat('h', h)
+uniform.addFloat('d', d)
+uniform.addMat4('extrinct1', np.array(data['calibrateMat']))
+uniform.addMat4('extrinct2', np.array(data2['calibrateMat']))
+
+mat = ShaderMaterial(pcdShader.vertex_shader,
+                        pcdShader.fragment_shader,
+                        uniform)
+
+print(np.ones(w*h*d))
+pointCloudGeo = DepthArrGeometry(np.ones(w*h*d))
+scene2.add(pointCloudGeo)
 
 sys.exit(app.exec_())
