@@ -25,6 +25,7 @@ pip install PyQt5
 
 pip install wxPython
 
+pip install scikit-image
 pip install scipy
 pip install open3d
 
