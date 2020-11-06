@@ -39,15 +39,8 @@ void main() {
     float y = (mod(gl_VertexID,vL*vL)/vL)/vL+0.5;
     float x = (mod(mod(gl_VertexID,vL*vL),vL))/vL-0.5;
     vec3 point = vec3(x,1-y,z);
+
     vec2 pixel = point2pixel(point,depthValue);
-
-    /*
-    vec2 pixel = vec2(x*w,h-y*h);
-    vec3 point = pixel2point(pixel,depthValue,z);
-    gl_Position =  gl_ModelViewProjectionMatrix *vec4(point.xyz,1.0);
-
-    depthTest = (z>depthValue && depthValue>0) ? 0:1;
-    */
 
     depthTest = (z>depthValue && depthValue>0) ? 0:1;
     gl_Position =  gl_ModelViewProjectionMatrix *vec4(point.xyz,1.0);
@@ -73,7 +66,7 @@ void main() {
         gl_FragColor = color1;
     }
     else{
-        gl_FragColor = vec4(0.0,0.0,0.0,0.0);
+        gl_FragColor = vec4(uv1.xy,0.0,0.0);
     }
 }
 '''
