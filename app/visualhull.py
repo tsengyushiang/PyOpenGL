@@ -19,7 +19,7 @@ from Algorithm.marchingCube import *
 import shaders.visuallhull as visualhullShader
 import shaders.realsensePointCloud as pcdShader
 
-from FileIO.ply import savePcd 
+from FileIO.ply import savePcd,save
 
 from Args.medias import build_argparser
 args = build_argparser().parse_args()
@@ -77,9 +77,9 @@ with open(args.config1) as f:
 with open(args.config2) as f:
     data2 = json.load(f)
 
-vL = 250
+vL = 100
 depth1 = cv2.imread(args.depth1, cv2.IMREAD_UNCHANGED)
-sampleDepth = cv2.resize(depth1, (vL,vL), interpolation=cv2.INTER_NEAREST).flatten()
+sampleDepth = cv2.resize(depth1, (vL,vL), interpolation=cv2.INTER_NEAREST)
 depth1 = depth1.astype('uint8')
 depth2 = cv2.imread(args.depth2, cv2.IMREAD_UNCHANGED).astype('uint8')
 depth1 = cv2.cvtColor(depth1, cv2.COLOR_GRAY2BGR)
@@ -110,12 +110,23 @@ mat = ShaderMaterial(visualhullShader.vertex_shader,
                         visualhullShader.fragment_shader,
                         uniform)
 
-depthvalues = np.tile(sampleDepth,vL)*data['depth_scale']
+depthvalues = np.tile(sampleDepth.flatten(),vL)*data['depth_scale']
 
 pointCloudGeo = DepthArrGeometry(depthvalues)
 mesh = Mesh(mat, pointCloudGeo)
 
 scene2.add(mesh)
+
+depth16 = cv2.imread(args.depth1, cv2.IMREAD_UNCHANGED)
+color1 = cv2.imread(args.color1, cv2.IMREAD_UNCHANGED)
+intr = DotMap()
+intr.fx = data['depth_fx']
+intr.fy = data['depth_fy']
+intr.ppx = data['depth_cx']
+intr.ppy = data['depth_cy']
+pcds = genPointCloudMesh(
+    data['depth_height'], data['depth_width'], intr, color1, depth16.flatten()*data['depth_scale'], data['calibrateMat'])
+scene2.add(pcds)
 
 vertices = []
 color = []
@@ -128,24 +139,30 @@ w=data['depth_width']
 h=data['depth_height']
 
 def point2pixel(x,y,depthValue):
-    u = (x/depthValue*fx+ppx)
-    v = (y/depthValue*fy+ppy)
+    u = (x/depthValue*fx+ppx)/w
+    v = (y/depthValue*fy+ppy)/h
     return u,v
 
 for gl_VertexID,depthValue in enumerate(depthvalues):
     z = ((gl_VertexID/(vL*vL)))/vL
     y = ((gl_VertexID%(vL*vL))/vL)/vL+0.5
     x = (((gl_VertexID%(vL*vL))%vL))/vL-0.5
+    depthvalues[gl_VertexID]=0
 
-    if z>depthValue and depthValue>0:
+    if depthValue!=0 :
         u,v = point2pixel(x,1-y,depthValue)
-        if u>0 and u<w and v>0 and v<h :
-            c = color1[int(v)][int(u)]
-            d = depth1[int(v)][int(u)]
-            if d[0]>1e-05:
-                vertices.append([x,1-y,z])
+        if u>0 and u<1.0 and v>0 and v<1.0 :
+
+            c = color1[int(v*h)][int(u*w)]
+            d = depth16[int(v*h)][int(u*w)]
+
+            if d*data['depth_scale'] < z and d>0:
+                vertices.append([x,-1+y,z])
                 color.append([c[2]/255.0,c[1]/255.0,c[1]/255.0])
+                depthvalues[gl_VertexID]=1    
 
 savePcd(vertices,color,os.path.join(args.output,'depthhull.ply'))
+
+#verts, faces, normals = marchingCube(depthvalues.reshape((vL,vL,vL)))
 
 sys.exit(app.exec_())
