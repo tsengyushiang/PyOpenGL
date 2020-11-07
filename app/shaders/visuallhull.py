@@ -47,7 +47,7 @@ void main() {
     
     vec3 point = vec3(x/vL-0.5,y/vL-0.5,z);
 
-    vec3 renderPoint = point;
+    vec3 renderPoint = projectPoint;
     vec2 unprojectPixel = point2pixel(renderPoint,depthValue);
     
     /*
@@ -79,7 +79,7 @@ void main() {
         if( depthTest==0){
             gl_FragColor = color1;
         }else{
-            gl_FragColor = vec4(0.0,1.0,0.0,1.0);
+            gl_FragColor = vec4(0.0,1.0,0.0,0.0);
         }
     }
     else{
