@@ -65,20 +65,38 @@ def getDepthHull(depth,color,config,vL=150):
         point.y = y/vL-0.5
         point.z = z
 
+        inverPoint = invCameraMat@np.array([point.x,point.y,point.z,1.0]).T
+        transPoint = DotMap()
+        transPoint.x = inverPoint[0]
+        transPoint.y = inverPoint[1]
+        transPoint.z = inverPoint[2]
+        onverThrehold = invCameraMat@np.array([point.x,point.y,depthValue,1.0]).T
+
         if depthValue!=0 :
-            u,v = point2pixel(point,depthValue)
+            u,v = point2pixel(transPoint,onverThrehold[2])
             if u>0 and u<1.0 and v>0 and v<1.0 :
 
                 c = colorMat[int((1-v)*h)][int(u*w)]
                 d = depthMat[int((1-v)*h)][int(u*w)]
 
-                if d*data['depth_scale'] < z and d>0:
-                    vertices.append([point.x,point.y,point.z])
-                    color.append([c[2]/255.0,c[1]/255.0,c[1]/255.0])
+                if d>0:
+                    if d*data['depth_scale'] < transPoint.z:
+                        vertices.append([point.x,point.y,point.z])
+                        color.append([c[2]/255.0,c[1]/255.0,c[1]/255.0])
+                    '''
+                    else:
+                        vertices.append([point.x,point.y,point.z])
+                        color.append([1.0,0.0,0.0])
+                    '''    
     
     return vertices,color
 
-vertices,color = getDepthHull(args.depth1,args.color1,args.config1)
+
+
+vertices,color = getDepthHull(args.depth1,args.color1,args.config1,50)
 savePcd(vertices,color,os.path.join(args.output,'depthhull.ply'))
+
+vertices,color = getDepthHull(args.depth2,args.color2,args.config2,50)
+savePcd(vertices,color,os.path.join(args.output,'depthhull2.ply'))
 
 #verts, faces, normals = marchingCube(depthvalues.reshape((vL,vL,vL)))
