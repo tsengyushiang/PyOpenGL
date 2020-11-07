@@ -8,7 +8,7 @@ from dotmap import DotMap
 from qtLayout.twoWindow import *
 from PyQt5.QtCore import *
 from Algorithm.marchingCube import *
-from FileIO.ply import savePcd,save
+from FileIO.ply import savePcd,save,saveMesh
 from Args.medias import build_argparser
 
 args = build_argparser().parse_args()
@@ -90,9 +90,10 @@ def tsdf2pcd(tsdf,vL,threshold=2):
         if value == 2 :
             vertices.append([point.x,point.y,point.z])
             color.append([1.0,0.0,0.0])
-            tsdf[gl_VertexID]=1
-        else:
             tsdf[gl_VertexID]=0
+        else:
+            tsdf[gl_VertexID]=1
+        
         '''
         elif value ==1 :
             vertices.append([point.x,point.y,point.z])
@@ -101,15 +102,16 @@ def tsdf2pcd(tsdf,vL,threshold=2):
 
     return vertices,color
 
-
-vL=250
+vL=512
 tsdf = np.zeros(vL*vL*vL)
 
 startTime = time.time()
-_,_ = getDepthHull(args.depth1,args.color1,args.config1,tsdf,vL)
+vertices,color = getDepthHull(args.depth1,args.color1,args.config1,tsdf,vL)
+savePcd(vertices,color,os.path.join(args.output,'occupyField1.ply'))
 print('finish 1st hull',time.time()-startTime)
 startTime = time.time()
-_,_ = getDepthHull(args.depth2,args.color2,args.config2,tsdf,vL)
+vertices,color = getDepthHull(args.depth2,args.color2,args.config2,tsdf,vL)
+savePcd(vertices,color,os.path.join(args.output,'occupyField2.ply'))
 print('finish 2nd hull',time.time()-startTime)
 startTime = time.time()
 vertices,color = tsdf2pcd(tsdf,vL,2)
@@ -118,4 +120,19 @@ startTime = time.time()
 savePcd(vertices,color,os.path.join(args.output,'depthhull.ply'))
 print('save',time.time()-startTime)
 
-#verts, faces, normals = marchingCube(depthvalues.reshape((vL,vL,vL)))
+verts, faces, normals = marchingCube(tsdf.reshape((vL,vL,vL)))
+
+verts[:,1] *= -1
+verts[:,1] += vL
+
+verts/=vL
+x = np.array(verts[:,0])
+verts[:,0] = verts[:,2]
+verts[:,2] = x
+
+verts[:,0] -= 0.5 
+verts[:,1] -= 0.5
+verts[:,0] *= 3 
+verts[:,1] *= 3
+
+saveMesh(verts, faces,os.path.join(args.output,'mesh.ply'))

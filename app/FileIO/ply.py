@@ -1,6 +1,12 @@
 import numpy as np
 import open3d as o3d
 
+def saveMesh(vertices,faces,path):
+    mesh = o3d.geometry.TriangleMesh()
+    mesh.vertices = o3d.utility.Vector3dVector(vertices)
+    mesh.triangles = o3d.utility.Vector3iVector(faces)
+    o3d.io.write_triangle_mesh(path, mesh)
+    
 # xyz rgb
 def savePcd(npPcd,npColor,path):
     pcd = o3d.geometry.PointCloud()
