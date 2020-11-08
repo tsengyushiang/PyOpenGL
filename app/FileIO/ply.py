@@ -6,12 +6,14 @@ def saveMesh(vertices,faces,path):
     mesh.vertices = o3d.utility.Vector3dVector(vertices)
     mesh.triangles = o3d.utility.Vector3iVector(faces)
     o3d.io.write_triangle_mesh(path, mesh)
-    
+
 # xyz rgb
-def savePcd(npPcd,npColor,path):
+def savePcd(npPcd,npColor,path,npNormal=None):
     pcd = o3d.geometry.PointCloud()
     pcd.points = o3d.utility.Vector3dVector(npPcd)
     pcd.colors = o3d.utility.Vector3dVector(npColor)
+    if npNormal is not None:
+        pcd.normals = o3d.utility.Vector3dVector(npNormal)
     o3d.io.write_point_cloud(path, pcd)
 
 def readPlyPoints(path):

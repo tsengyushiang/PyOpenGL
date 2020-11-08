@@ -103,8 +103,8 @@ def tsdf2pcd(tsdf,vL,threshold=2):
     return vertices,color
 
 
-def depthHullApp():
-    vL=800
+def depthHullApp(vL):
+    
     tsdf = np.zeros(vL*vL*vL)
 
     startTime = time.time()
@@ -138,6 +138,8 @@ def depthHullApp():
     verts[:,1] *= 3
 
     saveMesh(verts, faces,os.path.join(args.output,'mesh.ply'))
+    savePcd(verts, normals, os.path.join(args.output,'mesh.point.ply'),normals)
+
 
 from Realsense.device import depth2points
 from Algorithm.open3D.pointCloud import normalEstimate
@@ -244,4 +246,5 @@ def pointCloudApp():
     
     save(points, colors,normals, os.path.join(args.output,'hand.point.ply'))
 
-pointCloudApp()
+#pointCloudApp()
+depthHullApp(150)
