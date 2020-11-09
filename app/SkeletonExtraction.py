@@ -5,6 +5,7 @@ from dotmap import DotMap
 
 from qtLayout.MeshSimplifacation import *
 from PyQt5.QtCore import *
+from PyQt5.QtWidgets import QFileDialog
 
 from opengl.Scene.QtGLScene import *
 from opengl.Geometry.DepthArrGeometry import *
@@ -25,32 +26,50 @@ MainWindow = QtWidgets.QMainWindow()
 ui = Ui_MainWindow()
 ui.setupUi(MainWindow)
 
+# setup scene
 scene = QtGLScene(ui.openGLWidget)
-
-# uniform
-uniform = Uniform()
-
 MainWindow.show()
 
+uniform = Uniform()
 uniform.addvec3('viewPos', [0, 0, -1])
-geo = OpenMeshGeometry(args.highResModel)
-
-def onHandleSlider(value):
-    range = ui.horizontalScrollBar.maximum()-ui.horizontalScrollBar.minimum()
-    geo.setLevel(float(value)/range)
-        
-ui.horizontalScrollBar.valueChanged.connect(onHandleSlider)
-
-normalizeMat = geo.getNormalizeMat()
-uniform.addMat4('normalizeMat', normalizeMat)
-
+uniform.addMat4('normalizeMat', np.identity(4))
 mat = ShaderMaterial(myShader.vertex_shader,
                      myShader.fragment_shader,
                      uniform)
-
+geo = OpenMeshGeometry()
 mesh = Mesh(mat, geo)
 scene.add(mesh)
 
+# setup UI
+def importObj():
+    filename,_ = QFileDialog.getOpenFileName()
+
+    print(filename)
+    scene.startDraw()
+    sucess = geo.readObj(filename)
+    if sucess:
+        uniform.setValue('normalizeMat',geo.getNormalizeMat())
+    scene.endDraw()
+
+ui.pushButton_2.clicked.connect(importObj)
+
+def onHandleSlider(value):
+    range = ui.horizontalScrollBar.maximum()-ui.horizontalScrollBar.minimum()
+    geo.setLevel(float(value)/range)        
+ui.horizontalScrollBar.valueChanged.connect(onHandleSlider)
+'''
+def onHandleSlider(value):
+    range = ui.horizontalScrollBar.maximum()-ui.horizontalScrollBar.minimum()
+    geo.setLevel(float(value)/range)        
+ui.horizontalScrollBar.valueChanged.connect(onHandleSlider)
+
+def onHandleSlider(value):
+    range = ui.horizontalScrollBar.maximum()-ui.horizontalScrollBar.minimum()
+    geo.setLevel(float(value)/range)        
+ui.horizontalScrollBar.valueChanged.connect(onHandleSlider)
+'''
+
+# render
 updateSimplification = True
 def mainloop():
     global i,updateSimplification
@@ -60,7 +79,8 @@ def mainloop():
         scene.camera.position[2]])
     scene.startDraw()
 
-    start = time.time()    
+    start = time.time()
+    '''
     if updateSimplification:
         try:
             updateSimplification = geo.contraction()
@@ -68,9 +88,10 @@ def mainloop():
             print('success')
         except:
             updateSimplification=False
-    #print('collapse a edge cost ',time.time()-start)
-    
+    '''
+    #print('collapse a edge cost ',time.time()-start)    
     scene.endDraw()
+
 timer = QTimer(MainWindow)
 timer.timeout.connect(mainloop)
 timer.start(1)

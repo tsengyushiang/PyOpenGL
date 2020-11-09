@@ -66,21 +66,38 @@ def area(x1, y1, z1, x2, y2, z2):
     return area 
 
 class OpenMeshGeometry:
-    def __init__(self, filename):
+    def __init__(self):
         self.level = 0
         self.LODvaos = []
 
-        #self.mesh = read_trimesh(filename, vertex_normal=True)
-        self.mesh = read_trimesh(filename)
-
-        #self.mesh = DEBUG_MESH()
-        #DEBUG_SHOWATTRIBUTE(self.mesh)
-
-        self.updateVertexNormals()
-
         #contractionEnergy
-        self.WL = 1e-3*self.getAverageFaceArea()
+        #self.WL = 1e-3*self.getAverageFaceArea()
+        self.WL = 10
         self.sL = 2.0
+
+        self.mesh=None
+        
+    def isNotVaild(self):
+        return self.mesh is None
+
+    def readObj(self,filename):
+        self.level = 0
+        self.LODvaos = []
+        
+        try:
+            #self.mesh = read_trimesh(filename, vertex_normal=True)
+            self.mesh = read_trimesh(filename)
+
+            #self.mesh = DEBUG_MESH()
+            #DEBUG_SHOWATTRIBUTE(self.mesh)
+
+            self.updateVertexNormals()
+            self.init()
+            return True
+        except:
+            print('Load model error.')
+            self.mesh = None
+            return False
 
     def isConvexMesh(self,mesh):
 
@@ -353,6 +370,7 @@ class OpenMeshGeometry:
         ]       
 
     def genMeshVAO(self):
+
         vao = glGenVertexArrays(1)
         glBindVertexArray(vao)
         
@@ -384,13 +402,17 @@ class OpenMeshGeometry:
         glBindVertexArray(0)
 
         return vao,len(indices)*3
-
+            
     def init(self):
-
+        if self.isNotVaild():
+            return
+        
         vao,faces = self.genMeshVAO()
         self.LODvaos.append((vao,faces))
 
     def draw(self):
+        if self.isNotVaild():
+            return
 
         level = int((len(self.LODvaos)-1)*self.level)
         vao,faces = self.LODvaos[level]
