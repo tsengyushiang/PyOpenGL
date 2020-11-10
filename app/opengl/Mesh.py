@@ -3,6 +3,7 @@ class Mesh():
     def __init__(self, mat, geo):
         self.material = mat
         self.geometry = geo
+        self.visible=True
 
     def init(self):
         shader = self.material.init()
@@ -11,5 +12,6 @@ class Mesh():
 
     def draw(self):
         self.material.activate()
-        self.geometry.draw()
+        if self.visible:
+            self.geometry.draw()
         self.material.deactivate()

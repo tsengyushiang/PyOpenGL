@@ -16,12 +16,12 @@
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout">
     <item row="0" column="0">
-     <layout class="QVBoxLayout" name="verticalLayout_2" stretch="15,1,1,1,1">
+     <layout class="QVBoxLayout" name="verticalLayout_2" stretch="15,1,1,1">
       <item>
        <widget class="QOpenGLWidget" name="openGLWidget"/>
       </item>
       <item>
-       <layout class="QHBoxLayout" name="horizontalLayout_4" stretch="0,0">
+       <layout class="QHBoxLayout" name="horizontalLayout_4" stretch="0">
         <item>
          <widget class="QPushButton" name="pushButton_2">
           <property name="text">
@@ -29,17 +29,10 @@
           </property>
          </widget>
         </item>
-        <item>
-         <widget class="QPushButton" name="pushButton">
-          <property name="text">
-           <string>vetices / faces</string>
-          </property>
-         </widget>
-        </item>
        </layout>
       </item>
       <item>
-       <layout class="QHBoxLayout" name="horizontalLayout_3" stretch="1,15,1">
+       <layout class="QHBoxLayout" name="horizontalLayout_3" stretch="1,15">
         <item>
          <widget class="QPushButton" name="pushButton_3">
           <property name="text">
@@ -54,17 +47,10 @@
           </property>
          </widget>
         </item>
-        <item>
-         <widget class="QLabel" name="label_3">
-          <property name="text">
-           <string>0</string>
-          </property>
-         </widget>
-        </item>
        </layout>
       </item>
       <item>
-       <layout class="QHBoxLayout" name="horizontalLayout" stretch="1,15,1">
+       <layout class="QHBoxLayout" name="horizontalLayout" stretch="1,15">
         <item>
          <widget class="QPushButton" name="pushButton_4">
           <property name="text">
@@ -76,38 +62,6 @@
          <widget class="QScrollBar" name="horizontalScrollBar_2">
           <property name="orientation">
            <enum>Qt::Horizontal</enum>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QLabel" name="label_2">
-          <property name="text">
-           <string>0</string>
-          </property>
-         </widget>
-        </item>
-       </layout>
-      </item>
-      <item>
-       <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="1,15,1">
-        <item>
-         <widget class="QPushButton" name="pushButton_5">
-          <property name="text">
-           <string>PushButton</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QScrollBar" name="horizontalScrollBar">
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QLabel" name="label">
-          <property name="text">
-           <string>0</string>
           </property>
          </widget>
         </item>

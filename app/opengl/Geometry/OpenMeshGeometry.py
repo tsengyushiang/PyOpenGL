@@ -71,7 +71,6 @@ class OpenMeshGeometry:
         self.LODvaos = []
 
         #contractionEnergy
-        #self.WL = 1e-3*self.getAverageFaceArea()
         self.WL = 10
         self.sL = 2.0
 
@@ -93,6 +92,7 @@ class OpenMeshGeometry:
 
             self.updateVertexNormals()
             self.init()
+            self.WL = 1e-3*self.getAverageFaceArea()
             return True
         except:
             print('Load model error.')
