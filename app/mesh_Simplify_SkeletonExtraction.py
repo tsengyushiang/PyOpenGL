@@ -78,6 +78,7 @@ ui.pushButton_4.clicked.connect(enableSkeletonExtraction)
 updateSimplify = False
 def enableSimplify():
     global updateSimplify
+    geoSimplify.quadric_Init()
     updateSimplify = True
 ui.pushButton_3.clicked.connect(enableSimplify)
 
@@ -122,8 +123,7 @@ def mainloop():
     
     if updateSimplify:
         try:
-            # TODO :
-            updateSimplify = geoSimplify.collapseFirstEdge()
+            updateSimplify = geoSimplify.errorQuadrics()
             geoSimplify.init()
         except:
             updateSimplify = False

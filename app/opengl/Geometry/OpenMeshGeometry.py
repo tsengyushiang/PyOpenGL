@@ -6,6 +6,8 @@ import time
 import math 
 from scipy import sparse
 from scipy.sparse.linalg import spsolve
+import sys
+import bisect 
 
 class SparseMat:
     def __init__(self):
@@ -64,6 +66,7 @@ def area(x1, y1, z1, x2, y2, z2):
            (x1 * y2 - x2 * y1) ** 2) 
     area = area / 2
     return area 
+
 
 class OpenMeshGeometry:
     def __init__(self):
@@ -137,7 +140,6 @@ class OpenMeshGeometry:
             boundaryhalfEdge = mesh.next_halfedge_handle(boundaryhalfEdge)
             if boundaryhalfEdge.idx() == startEdgeId:
                 break
-        
         return True
 
     def getAverageFaceArea(self):
@@ -240,6 +242,126 @@ class OpenMeshGeometry:
         return True            
     
 
+    def plane_vector(self,vha,vhb,vhc):
+        A = np.array(self.mesh.point(vha))
+        B = np.array(self.mesh.point(vhb))
+        C = np.array(self.mesh.point(vhc))
+
+        AB = B-A
+        AC = C-A
+        normal = np.cross(AB,AC)
+        normal = normal/np.linalg.norm(normal)
+        d = -(np.matmul(A,normal.transpose()))
+        return [normal[0],normal[1],normal[2],d]
+
+    def calculate_quadric(self,vertex):
+        Q = np.zeros((4,4))
+        #find all adjacent faces
+        for fh in self.mesh.vf(vertex):
+            #get other vertex
+            fv = self.mesh.fv(fh)
+            vertices = []
+            for vh in fv:
+                if vh.idx()!=vertex.idx():
+                    vertices.append(vh) 
+            v1 = vertices[0]
+            v2 = vertices[1]
+            plane = self.plane_vector(vertex,v1,v2)
+            kp = np.array([
+                [plane[0]*plane[0],plane[0]*plane[1],plane[0]*plane[2],plane[0]*plane[3]],
+                [plane[1]*plane[0],plane[1]*plane[1],plane[1]*plane[2],plane[1]*plane[3]],
+                [plane[2]*plane[0],plane[2]*plane[1],plane[2]*plane[2],plane[2]*plane[3]],
+                [plane[3]*plane[0],plane[3]*plane[1],plane[3]*plane[2],plane[3]*plane[3]]
+            ])
+            Q+=kp
+        return Q
+
+    def quadric_edge(self,eh):
+        he0 = self.mesh.halfedge_handle(eh,0)
+        vh0 = self.mesh.to_vertex_handle(he0)
+
+        he1 = self.mesh.halfedge_handle(eh,1)
+        vh1 = self.mesh.to_vertex_handle(he1)
+
+        Q0 = self.mesh.vertex_property('quadric',vh0)
+        Q1 = self.mesh.vertex_property('quadric',vh1)
+
+        Q2 = Q0 + Q1
+        mat =  np.array([
+            [Q2[0][0],Q2[0][1],Q2[0][2],Q2[0][3]],
+            [Q2[0][1],Q2[1][1],Q2[1][2],Q2[1][3]],
+            [Q2[0][2],Q2[1][2],Q2[2][2],Q2[2][3]],
+            [0,0,0,1]
+        ])
+        if np.linalg.cond(mat) < 1/sys.float_info.epsilon:
+            vt = np.matmul(np.linalg.inv(mat),np.array([[0,0,0,1]]).transpose())
+            error = vt.transpose().dot(Q2).dot(vt)[0][0]
+            vt = vt.transpose()[0][:3]
+            self.mesh.set_edge_property('quadric',eh,error)
+            self.mesh.set_edge_property('vertex',eh,vt)
+
+    def quadric_Init(self):
+        for vh in self.mesh.vertices():
+            error = self.calculate_quadric(vh)
+            self.mesh.set_vertex_property('quadric',vh,error)
+        for eh in self.mesh.edges():
+            self.quadric_edge(eh)     
+
+    def errorQuadrics(self):       
+        errorlist = np.array(self.mesh.edge_property_array('quadric'))        
+        sortlist = np.argsort(errorlist)   
+        smallest = 0 
+
+        while smallest<len(sortlist):                  
+            edgeindex =  np.where(sortlist == smallest)[0][0]           
+            edgehandle = self.mesh.edge_handle(edgeindex)
+            isConvex = self.mesh.edge_property('convex',edgehandle)
+            if(isConvex == False):
+                smallest+=1
+                continue
+            vpos = self.mesh.edge_property('vertex',edgehandle)                
+            success = self.collapseEdge_quadric(edgehandle,useMidPoint=False,position=vpos)           
+            self.mesh.garbage_collection()
+            if success:                              
+                return True
+            else :
+                smallest+=1
+                continue           
+        return False       
+
+    def collapseEdge_quadric(self,edgehandle,useMidPoint=True,position=[0,0,0]):
+        he0 = self.mesh.halfedge_handle(edgehandle,0)
+        vh0 = self.mesh.to_vertex_handle(he0)
+
+        he1 = self.mesh.halfedge_handle(edgehandle,1)
+        vh1 = self.mesh.to_vertex_handle(he1)
+        
+        if useMidPoint:
+            midPoint = (self.mesh.point(vh0)+self.mesh.point(vh1))/2
+
+        if self.mesh.is_collapse_ok(he0) and self.is_merge_ok(edgehandle):
+            self.mesh.collapse(he0)
+            vh0 = self.mesh.to_vertex_handle(he0)
+            self.mesh.update_normal(vh0)
+
+            if useMidPoint:
+                self.mesh.set_point(vh0,midPoint)
+            else:
+                self.mesh.set_point(vh0,position)
+            
+            # recompute affect edges
+            for vh in self.mesh.vv(vh0):
+                error = self.calculate_quadric(vh)
+                self.mesh.set_vertex_property('quadric',vh,error)
+                for eh in self.mesh.ve(vh):                   
+                    self.quadric_edge(eh)                    
+                    self.mesh.set_edge_property('convex',eh,None)
+            return True
+
+        else:
+            self.mesh.set_edge_property('convex',edgehandle,False)
+            return False
+        
     def collapseFirstEdge(self):
 
         for eh in self.mesh.edges():
