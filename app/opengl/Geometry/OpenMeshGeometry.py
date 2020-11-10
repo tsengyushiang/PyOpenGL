@@ -8,6 +8,14 @@ from scipy import sparse
 from scipy.sparse.linalg import spsolve
 import sys
 import bisect 
+import numpy as np
+import open3d as o3d
+
+def saveMesh(vertices,faces,path):
+    mesh = o3d.geometry.TriangleMesh()
+    mesh.vertices = o3d.utility.Vector3dVector(vertices)
+    mesh.triangles = o3d.utility.Vector3iVector(faces)
+    o3d.io.write_triangle_mesh(path, mesh)
 
 class SparseMat:
     def __init__(self):
@@ -540,11 +548,18 @@ class OpenMeshGeometry:
         vao,faces = self.LODvaos[level]
 
         glBindVertexArray(vao)
-        glEnable(GL_CULL_FACE)
-        glCullFace(GL_FRONT)
-        glPolygonMode( GL_FRONT_AND_BACK, GL_LINE )
+        
         glDrawElements(GL_TRIANGLES, faces, GL_UNSIGNED_INT,
-                None)  # This line does work too!
+                None)
+
+    def save(self,name):
+
+        vertices = np.array(
+            self.mesh.points(), dtype='f')
+        indices = np.array(
+            self.mesh.face_vertex_indices(), dtype=np.int32)
+        
+        saveMesh(vertices,indices,name)
 
     def setLevel(self,zero2one):
         self.level = zero2one

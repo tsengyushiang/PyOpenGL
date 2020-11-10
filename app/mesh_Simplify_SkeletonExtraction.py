@@ -1,4 +1,3 @@
-import cv2
 import sys
 import json
 from dotmap import DotMap
@@ -8,7 +7,6 @@ from PyQt5.QtCore import *
 from PyQt5.QtWidgets import QFileDialog
 
 from opengl.Scene.QtGLScene import *
-from opengl.Geometry.DepthArrGeometry import *
 from opengl.Material.ShaderMaterial import *
 from opengl.Texture import *
 from opengl.Mesh import *
@@ -163,21 +161,31 @@ def mainloop():
             updateSkeleton = geoSkeleton.contraction()
             geoSkeleton.init()
         except:
+            geoSkeleton.save('./skeleton.ply')
             updateSkeleton = False
     
     if updateSimplify:
         try:
             updateSimplify = geoSimplify.errorQuadrics()
+            if not updateSimplify:
+                geoSimplify.save('./errorQuadrics.ply')
+
             geoSimplify.init()
         except:
+            geoSimplify.save('./errorQuadrics.ply')
             updateSimplify = False
     
     if updateMidSimplify:
         try:
-            print('simplify')
             updateMidSimplify = geoMidSimplify.collapseFirstEdge()
+            
+            if not updateMidSimplify:
+                geoMidSimplify.save('./midpoint.ply')
+
             geoMidSimplify.init()
         except:
+            
+            geoMidSimplify.save('./midpoint.ply')
             updateMidSimplify = False
 
     scene.endDraw()
