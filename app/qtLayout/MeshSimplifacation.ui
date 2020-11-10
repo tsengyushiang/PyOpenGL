@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>498</width>
-    <height>531</height>
+    <width>543</width>
+    <height>573</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -16,7 +16,7 @@
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout">
     <item row="0" column="0">
-     <layout class="QVBoxLayout" name="verticalLayout_2" stretch="15,1,1,1">
+     <layout class="QVBoxLayout" name="verticalLayout_2" stretch="15,0,0,0,0">
       <item>
        <widget class="QOpenGLWidget" name="openGLWidget"/>
       </item>
@@ -32,11 +32,29 @@
        </layout>
       </item>
       <item>
-       <layout class="QHBoxLayout" name="horizontalLayout_3" stretch="1,15">
+       <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="2,15">
+        <item>
+         <widget class="QPushButton" name="pushButton">
+          <property name="text">
+           <string>midpoint simplify</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QScrollBar" name="horizontalScrollBar">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayout_3" stretch="2,15">
         <item>
          <widget class="QPushButton" name="pushButton_3">
           <property name="text">
-           <string>simplify</string>
+           <string>QEM simplify</string>
           </property>
          </widget>
         </item>
@@ -50,7 +68,7 @@
        </layout>
       </item>
       <item>
-       <layout class="QHBoxLayout" name="horizontalLayout" stretch="1,15">
+       <layout class="QHBoxLayout" name="horizontalLayout" stretch="2,15">
         <item>
          <widget class="QPushButton" name="pushButton_4">
           <property name="text">
@@ -76,7 +94,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>498</width>
+     <width>543</width>
      <height>21</height>
     </rect>
    </property>
