@@ -4,6 +4,34 @@ from openmesh import *
 import numpy as np
 import time
 import math 
+from scipy import sparse
+from scipy.sparse.linalg import spsolve
+import sys
+import bisect 
+import numpy as np
+import open3d as o3d
+
+def saveMesh(vertices,faces,path):
+    mesh = o3d.geometry.TriangleMesh()
+    mesh.vertices = o3d.utility.Vector3dVector(vertices)
+    mesh.triangles = o3d.utility.Vector3iVector(faces)
+    o3d.io.write_triangle_mesh(path, mesh)
+
+class SparseMat:
+    def __init__(self):
+        self.row=[]
+        self.col=[]
+        self.data=[]
+    
+    def insert(self,row,col,data):
+        self.row.append(row)
+        self.col.append(col)
+        self.data.append(data)
+
+    def mat(self,shape):
+        return sparse.csr_matrix((self.data, (self.row, self.col)), shape)
+        
+
 
 def DEBUG_MESH():
     mesh = TriMesh()
@@ -29,32 +57,60 @@ def DEBUG_MESH():
     fh7 = mesh.add_face(vh6, vh4, vh5)
     return mesh
 
-
 # log all member function
 def DEBUG_SHOWATTRIBUTE(obj):
     for att in dir(obj):
         print (att, getattr(obj,att))
 
+def calcAngle(vector_1,vector_2):
+    unit_vector_1 = vector_1 / np.linalg.norm(vector_1)
+    unit_vector_2 = vector_2 / np.linalg.norm(vector_2)
+    dot_product = np.dot(unit_vector_1, unit_vector_2)
+    return  math.degrees(np.arccos(dot_product))
+
+def area(x1, y1, z1, x2, y2, z2): 
+    area = math.sqrt((y1 * z2 - y2 * z1) ** 2 
+           + (x1 * z2 - x2 * z1) ** 2 + 
+           (x1 * y2 - x2 * y1) ** 2) 
+    area = area / 2
+    return area 
+
+
 class OpenMeshGeometry:
-    def __init__(self, filename):
+    def __init__(self):
         self.level = 0
         self.LODvaos = []
 
-        #self.mesh = read_trimesh(filename, vertex_normal=True)
-        self.mesh = read_trimesh(filename)
+        #contractionEnergy
+        self.WL = 10
+        self.sL = 2.0
 
-        #self.mesh = DEBUG_MESH()
-        #DEBUG_SHOWATTRIBUTE(self.mesh)
+        self.mesh=None
+        
+    def isNotVaild(self):
+        return self.mesh is None
 
-        self.updateVertexNormals()
+    def readObj(self,filename):
+        self.level = 0
+        self.LODvaos = []
+        
+        try:
+            #self.mesh = read_trimesh(filename, vertex_normal=True)
+            self.mesh = read_trimesh(filename)
+
+            #self.mesh = DEBUG_MESH()
+            #DEBUG_SHOWATTRIBUTE(self.mesh)
+
+            self.updateVertexNormals()
+            self.init()
+            self.WL = 1e-3*self.getAverageFaceArea()
+            return True
+        except:
+            print('Load model error.')
+            self.mesh = None
+            return False
 
     def isConvexMesh(self,mesh):
-        
-        def calcAngle(vector_1,vector_2):
-            unit_vector_1 = vector_1 / np.linalg.norm(vector_1)
-            unit_vector_2 = vector_2 / np.linalg.norm(vector_2)
-            dot_product = np.dot(unit_vector_1, unit_vector_2)
-            return  math.degrees(np.arccos(dot_product))
 
         boundaryhalfEdge = None
         # get first boundary vertex       
@@ -92,9 +148,228 @@ class OpenMeshGeometry:
             boundaryhalfEdge = mesh.next_halfedge_handle(boundaryhalfEdge)
             if boundaryhalfEdge.idx() == startEdgeId:
                 break
-        
         return True
 
+    def getAverageFaceArea(self):
+        mat4 = self.getNormalizeMat()
+        areaSum = 0
+        count = 0
+        for fh in self.mesh.faces():
+            tri = []
+            for vh in self.mesh.fv(fh):
+                tri.append(self.mesh.point(vh))
+            
+            # calc area
+            count = count+1
+
+            a = tri[0]-tri[2]
+            b = tri[1]-tri[2]
+            areaSum = areaSum + area(a[0],a[1],a[2],b[0],b[1],b[2])
+        
+        return areaSum/count
+
+    def contraction(self):       
+    
+        verticesNumber = self.mesh.n_vertices()
+
+        # solve least-sqare ax=b to find optimal x for each vertex
+        # Skeleton Extraction ref : http://graphics.csie.ncku.edu.tw/Skeleton/skeleton-paperfinal.pdf
+        # Least-squares Meshes ref : https://igl.ethz.ch/projects/Laplacian-mesh-processing/ls-meshes/ls-meshes.pdf
+        
+        # topolog weight sarse matrix
+        weightConstain = SparseMat()   
+        targetPoint = SparseMat()
+
+        for vh in self.mesh.vertices():
+
+            oneRingArea = 0
+            for fh in self.mesh.vf(vh):
+                tri = []
+                for vfh in self.mesh.fv(fh):
+                    tri.append(self.mesh.point(vfh))                    
+                # calc area
+                a = tri[0]-tri[2]
+                b = tri[1]-tri[2]
+                oneRingArea = oneRingArea + area(a[0],a[1],a[2],b[0],b[1],b[2])
+            
+            origionArea = self.mesh.vertex_property('one-ring-area',vh)
+            if origionArea==None:
+                self.mesh.set_vertex_property('one-ring-area',vh,oneRingArea)
+                origionArea = oneRingArea
+            
+            WH = self.mesh.vertex_property('WH',vh)
+            if WH==None:
+                WH = 1.0
+
+            if oneRingArea!=0:
+                self.mesh.set_vertex_property('WH',vh, WH * math.sqrt(origionArea/oneRingArea))
+
+            p0 = self.mesh.point(vh)
+            sumWeights = 0
+            # calc conformal weight cotA+cotB
+            oneRingVertexHandles = []
+            for vvh in self.mesh.vv(vh):
+                oneRingVertexHandles.append((
+                    vvh,self.mesh.point(vvh)
+                ))
+
+            variant = len(oneRingVertexHandles)
+            for index in range(variant):
+                _,p1 = oneRingVertexHandles[(index+1)%variant]
+                vh0,p = oneRingVertexHandles[index]
+                _,p_1 = oneRingVertexHandles[(index-1)%variant]
+                angleA = calcAngle(p0-p1,p-p1)
+                angleB = calcAngle(p0-p_1,p-p_1)
+                cotA = 1/math.tan(math.radians(angleA))
+                cotB =1/math.tan(math.radians(angleB))
+
+                # add topology weight
+                weightConstain.insert(vh.idx(),vh0.idx(),(cotA + cotB)*self.WL)
+                sumWeights = sumWeights + cotA + cotB
+            
+            #add weight balance
+            weightConstain.insert(vh.idx(),vh.idx(),-sumWeights*self.WL)
+
+            # add constrains
+            weightConstain.insert(vh.idx()+verticesNumber,vh.idx(),1*WH)
+            targetPoint.insert(vh.idx()+verticesNumber,0,p0[0]*WH)
+            targetPoint.insert(vh.idx()+verticesNumber,1,p0[1]*WH)
+            targetPoint.insert(vh.idx()+verticesNumber,2,p0[2]*WH)
+        
+        b = targetPoint.mat((2*verticesNumber,3))
+        A = weightConstain.mat((2*verticesNumber,verticesNumber))
+
+        #print(A.toarray().shape,b.shape)
+        x = spsolve(A.T*A,A.T*b).toarray()
+
+        self.WL = self.WL * self.sL
+
+        # update vertex position
+        for vh in self.mesh.vertices():
+            self.mesh.set_point(vh,x[vh.idx()])
+        return True            
+    
+
+    def plane_vector(self,vha,vhb,vhc):
+        A = np.array(self.mesh.point(vha))
+        B = np.array(self.mesh.point(vhb))
+        C = np.array(self.mesh.point(vhc))
+
+        AB = B-A
+        AC = C-A
+        normal = np.cross(AB,AC)
+        normal = normal/np.linalg.norm(normal)
+        d = -(np.matmul(A,normal.transpose()))
+        return [normal[0],normal[1],normal[2],d]
+
+    def calculate_quadric(self,vertex):
+        Q = np.zeros((4,4))
+        #find all adjacent faces
+        for fh in self.mesh.vf(vertex):
+            #get other vertex
+            fv = self.mesh.fv(fh)
+            vertices = []
+            for vh in fv:
+                if vh.idx()!=vertex.idx():
+                    vertices.append(vh) 
+            v1 = vertices[0]
+            v2 = vertices[1]
+            plane = self.plane_vector(vertex,v1,v2)
+            kp = np.array([
+                [plane[0]*plane[0],plane[0]*plane[1],plane[0]*plane[2],plane[0]*plane[3]],
+                [plane[1]*plane[0],plane[1]*plane[1],plane[1]*plane[2],plane[1]*plane[3]],
+                [plane[2]*plane[0],plane[2]*plane[1],plane[2]*plane[2],plane[2]*plane[3]],
+                [plane[3]*plane[0],plane[3]*plane[1],plane[3]*plane[2],plane[3]*plane[3]]
+            ])
+            Q+=kp
+        return Q
+
+    def quadric_edge(self,eh):
+        he0 = self.mesh.halfedge_handle(eh,0)
+        vh0 = self.mesh.to_vertex_handle(he0)
+
+        he1 = self.mesh.halfedge_handle(eh,1)
+        vh1 = self.mesh.to_vertex_handle(he1)
+
+        Q0 = self.mesh.vertex_property('quadric',vh0)
+        Q1 = self.mesh.vertex_property('quadric',vh1)
+
+        Q2 = Q0 + Q1
+        mat =  np.array([
+            [Q2[0][0],Q2[0][1],Q2[0][2],Q2[0][3]],
+            [Q2[0][1],Q2[1][1],Q2[1][2],Q2[1][3]],
+            [Q2[0][2],Q2[1][2],Q2[2][2],Q2[2][3]],
+            [0,0,0,1]
+        ])
+        if np.linalg.cond(mat) < 1/sys.float_info.epsilon:
+            vt = np.matmul(np.linalg.inv(mat),np.array([[0,0,0,1]]).transpose())
+            error = vt.transpose().dot(Q2).dot(vt)[0][0]
+            vt = vt.transpose()[0][:3]
+            self.mesh.set_edge_property('quadric',eh,error)
+            self.mesh.set_edge_property('vertex',eh,vt)
+
+    def quadric_Init(self):
+        for vh in self.mesh.vertices():
+            error = self.calculate_quadric(vh)
+            self.mesh.set_vertex_property('quadric',vh,error)
+        for eh in self.mesh.edges():
+            self.quadric_edge(eh)     
+
+    def errorQuadrics(self):       
+        errorlist = np.array(self.mesh.edge_property_array('quadric'))        
+        sortlist = np.argsort(errorlist)   
+        smallest = 0 
+
+        while smallest<len(sortlist):                  
+            edgeindex =  np.where(sortlist == smallest)[0][0]           
+            edgehandle = self.mesh.edge_handle(edgeindex)
+            isConvex = self.mesh.edge_property('convex',edgehandle)
+            if(isConvex == False):
+                smallest+=1
+                continue
+            vpos = self.mesh.edge_property('vertex',edgehandle)                
+            success = self.collapseEdge_quadric(edgehandle,useMidPoint=False,position=vpos)           
+            self.mesh.garbage_collection()
+            if success:                              
+                return True
+            else :
+                smallest+=1
+                continue           
+        return False       
+
+    def collapseEdge_quadric(self,edgehandle,useMidPoint=True,position=[0,0,0]):
+        he0 = self.mesh.halfedge_handle(edgehandle,0)
+        vh0 = self.mesh.to_vertex_handle(he0)
+
+        he1 = self.mesh.halfedge_handle(edgehandle,1)
+        vh1 = self.mesh.to_vertex_handle(he1)
+        
+        if useMidPoint:
+            midPoint = (self.mesh.point(vh0)+self.mesh.point(vh1))/2
+
+        if self.mesh.is_collapse_ok(he0) and self.is_merge_ok(edgehandle):
+            self.mesh.collapse(he0)
+            vh0 = self.mesh.to_vertex_handle(he0)
+            self.mesh.update_normal(vh0)
+
+            if useMidPoint:
+                self.mesh.set_point(vh0,midPoint)
+            else:
+                self.mesh.set_point(vh0,position)
+            
+            # recompute affect edges
+            for vh in self.mesh.vv(vh0):
+                error = self.calculate_quadric(vh)
+                self.mesh.set_vertex_property('quadric',vh,error)
+                for eh in self.mesh.ve(vh):                   
+                    self.quadric_edge(eh)                    
+                    self.mesh.set_edge_property('convex',eh,None)
+            return True
+
+        else:
+            self.mesh.set_edge_property('convex',edgehandle,False)
+            return False
+        
     def collapseFirstEdge(self):
 
         for eh in self.mesh.edges():
@@ -225,6 +500,7 @@ class OpenMeshGeometry:
         ]       
 
     def genMeshVAO(self):
+
         vao = glGenVertexArrays(1)
         glBindVertexArray(vao)
         
@@ -256,23 +532,34 @@ class OpenMeshGeometry:
         glBindVertexArray(0)
 
         return vao,len(indices)*3
-
+            
     def init(self):
-
+        if self.isNotVaild():
+            return
+        
         vao,faces = self.genMeshVAO()
         self.LODvaos.append((vao,faces))
 
     def draw(self):
+        if self.isNotVaild():
+            return
 
         level = int((len(self.LODvaos)-1)*self.level)
         vao,faces = self.LODvaos[level]
 
         glBindVertexArray(vao)
-        glEnable(GL_CULL_FACE)
-        glCullFace(GL_FRONT)
-        glPolygonMode( GL_FRONT_AND_BACK, GL_LINE )
+        
         glDrawElements(GL_TRIANGLES, faces, GL_UNSIGNED_INT,
-                None)  # This line does work too!
+                None)
+
+    def save(self,name):
+
+        vertices = np.array(
+            self.mesh.points(), dtype='f')
+        indices = np.array(
+            self.mesh.face_vertex_indices(), dtype=np.int32)
+        
+        saveMesh(vertices,indices,name)
 
     def setLevel(self,zero2one):
         self.level = zero2one
