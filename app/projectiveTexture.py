@@ -37,6 +37,8 @@ timer.start(1)
 
 # projective texture model 
 uniformModel = Uniform()
+tex1 = Texture(np.zeros((2,2)))
+uniformModel.addTexture('tex1',tex1)
 uniformModel.addMat4('normalizeMat', np.identity(4))
 import shaders.projectiveTexture as projectiveTextureShader
 matModel = ShaderMaterial(projectiveTextureShader.vertex_shader,
@@ -46,21 +48,24 @@ matModel = ShaderMaterial(projectiveTextureShader.vertex_shader,
 from opengl.Geometry.BufferGeometry import *
 geoModel = BufferGeometry()
 model = Mesh(matModel, geoModel)
+model.wireframe = False
 scene.add(model)
 
 # texture uv plane
 UvPlane = Uniform()
 UvPlane.addMat4('normalizeMat', np.identity(4))
+UvPlane.addTexture('tex1',tex1)
 import shaders.uvTexture as uvTextureShader
 matUvPlane = ShaderMaterial(uvTextureShader.vertex_shader,
                      uvTextureShader.fragment_shader,
                      UvPlane)
 uvPlane = Mesh(matUvPlane, geoModel)
+uvPlane.wireframe = False
 scene2.add(uvPlane)
 
 def importResource():
     qfd = QFileDialog()
-    filter = "(*.config.json *.color.png *.obj)"
+    filter = "(*.config.json *.color.png *.obj *.png)"
     filenames,_ = QFileDialog.getOpenFileNames(qfd,'import', './', filter)
 
     for filename in filenames:
@@ -69,6 +74,22 @@ def importResource():
             print('config : ',filename)
         elif '.color.png' in filename:
             print('color : ',filename)
+        elif '.png' in filename:
+
+            img = cv2.imread(filename)
+            newTex = Texture(img) 
+
+            scene.startDraw()
+            newTex.init()
+            scene.endDraw()
+
+            scene.startDraw()
+            newTex.init()
+            scene.endDraw()
+
+            uniformModel.setValue('tex1',newTex)
+            UvPlane.setValue('tex1',newTex)
+
         elif '.obj' in filename:
             scene.startDraw()
             sucess = geoModel.readObj(filename)
