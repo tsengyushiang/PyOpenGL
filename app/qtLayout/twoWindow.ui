@@ -15,11 +15,11 @@
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout">
-    <item row="0" column="0">
-     <widget class="QOpenGLWidget" name="openGLWidget"/>
-    </item>
     <item row="0" column="1">
      <widget class="QOpenGLWidget" name="openGLWidget_2"/>
+    </item>
+    <item row="0" column="0">
+     <widget class="QOpenGLWidget" name="openGLWidget"/>
     </item>
    </layout>
   </widget>
@@ -32,8 +32,26 @@
      <height>21</height>
     </rect>
    </property>
+   <widget class="QMenu" name="menuFile">
+    <property name="title">
+     <string>File</string>
+    </property>
+    <addaction name="actionimport"/>
+    <addaction name="actionscreenshot"/>
+   </widget>
+   <addaction name="menuFile"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
+  <action name="actionimport">
+   <property name="text">
+    <string>import</string>
+   </property>
+  </action>
+  <action name="actionscreenshot">
+   <property name="text">
+    <string>screenshot</string>
+   </property>
+  </action>
  </widget>
  <resources/>
  <connections/>

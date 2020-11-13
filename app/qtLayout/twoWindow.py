@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'app/qtLayout/twoWindow.ui'
+# Form implementation generated from reading ui file 'app\qtLayout\twoWindow.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.0
 #
@@ -19,20 +19,29 @@ class Ui_MainWindow(object):
         self.centralwidget.setObjectName("centralwidget")
         self.gridLayout = QtWidgets.QGridLayout(self.centralwidget)
         self.gridLayout.setObjectName("gridLayout")
-        self.openGLWidget = QtWidgets.QOpenGLWidget(self.centralwidget)
-        self.openGLWidget.setObjectName("openGLWidget")
-        self.gridLayout.addWidget(self.openGLWidget, 0, 0, 1, 1)
         self.openGLWidget_2 = QtWidgets.QOpenGLWidget(self.centralwidget)
         self.openGLWidget_2.setObjectName("openGLWidget_2")
         self.gridLayout.addWidget(self.openGLWidget_2, 0, 1, 1, 1)
+        self.openGLWidget = QtWidgets.QOpenGLWidget(self.centralwidget)
+        self.openGLWidget.setObjectName("openGLWidget")
+        self.gridLayout.addWidget(self.openGLWidget, 0, 0, 1, 1)
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 674, 21))
         self.menubar.setObjectName("menubar")
+        self.menuFile = QtWidgets.QMenu(self.menubar)
+        self.menuFile.setObjectName("menuFile")
         MainWindow.setMenuBar(self.menubar)
         self.statusbar = QtWidgets.QStatusBar(MainWindow)
         self.statusbar.setObjectName("statusbar")
         MainWindow.setStatusBar(self.statusbar)
+        self.actionimport = QtWidgets.QAction(MainWindow)
+        self.actionimport.setObjectName("actionimport")
+        self.actionscreenshot = QtWidgets.QAction(MainWindow)
+        self.actionscreenshot.setObjectName("actionscreenshot")
+        self.menuFile.addAction(self.actionimport)
+        self.menuFile.addAction(self.actionscreenshot)
+        self.menubar.addAction(self.menuFile.menuAction())
 
         self.retranslateUi(MainWindow)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
@@ -40,6 +49,9 @@ class Ui_MainWindow(object):
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "Qt5+PyOpenGL"))
+        self.menuFile.setTitle(_translate("MainWindow", "File"))
+        self.actionimport.setText(_translate("MainWindow", "import"))
+        self.actionscreenshot.setText(_translate("MainWindow", "screenshot"))
 
 
 if __name__ == "__main__":
