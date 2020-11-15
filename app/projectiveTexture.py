@@ -39,7 +39,6 @@ timer.start(1)
 # projective texture model 
 uniformModel = Uniform()
 tex1 = Texture(np.zeros((2,2)))
-uniformModel.addTexture('tex1',tex1)
 depthMap = FrameBuffer(scene.size)
 uniformModel.addTexture('depthMap',depthMap)
 uniformModel.addTexture('projectTex',tex1)
@@ -69,7 +68,8 @@ scene.add(model)
 # texture uv plane
 UvPlane = Uniform()
 UvPlane.addMat4('normalizeMat', np.identity(4))
-UvPlane.addTexture('tex1',tex1)
+depthMap2 = FrameBuffer(scene2.size)
+UvPlane.addTexture('depthMap',depthMap2)
 UvPlane.addTexture('projectTex',tex1)
 
 # camera pose test
@@ -94,36 +94,48 @@ from opengl.Geometry.DepthArrGeometry import *
 geoPonints = DepthArrGeometry(np.zeros(10000))
 
 # texture uv plane
-UvPlane2 = Uniform()
-UvPlane2.addMat4('normalizeMat', np.identity(4))
-UvPlane2.addTexture('tex1',tex1)
-UvPlane2.addTexture('projectTex',tex1)
+depthMapUniform = Uniform()
+depthMapUniform.addMat4('normalizeMat', np.identity(4))
+depthMapUniform.addTexture('tex1',tex1)
+depthMapUniform.addTexture('projectTex',tex1)
 
 # camera pose test
-UvPlane2.addvec3('cam_pose',np.array([0,0,0]))
-UvPlane2.addMat4('inverTransMat',np.identity(4))
-UvPlane2.addFloat('ppx',953.74)
-UvPlane2.addFloat('ppy',560.38)
-UvPlane2.addFloat('fx',1387.60)
-UvPlane2.addFloat('fy',1388.31)
-UvPlane2.addFloat('w',1920)
-UvPlane2.addFloat('h',1080)
+depthMapUniform.addvec3('cam_pose',np.array([0,0,0]))
+depthMapUniform.addMat4('inverTransMat',np.identity(4))
+depthMapUniform.addFloat('ppx',953.74)
+depthMapUniform.addFloat('ppy',560.38)
+depthMapUniform.addFloat('fx',1387.60)
+depthMapUniform.addFloat('fy',1388.31)
+depthMapUniform.addFloat('w',1920)
+depthMapUniform.addFloat('h',1080)
 
 import shaders.projectDepthMap as projectDepthMap
-matUvPlane2 = ShaderMaterial(projectDepthMap.vertex_shader,
+matdepthMapModel = ShaderMaterial(projectDepthMap.vertex_shader,
                      projectDepthMap.fragment_shader,
-                     UvPlane2)
-uvPlane2 = Mesh(matUvPlane2, geoModel)
+                     depthMapUniform)
+depthMapModel = Mesh(matdepthMapModel, geoModel)
 
 scene.startDraw()
-uvPlane2.init()
+depthMapModel.init()
 scene.endDraw()
+
+scene2.startDraw()
+depthMapModel.init()
+scene2.endDraw()
+
 def customPaint():
     depthMap.updateResolution(scene.size)
     depthMap.startDraw()
-    uvPlane2.draw()
+    depthMapModel.draw()
     depthMap.endDraw()
+
+    depthMap2.updateResolution(scene2.size)
+    depthMap2.startDraw()
+    depthMapModel.draw()
+    depthMap2.endDraw()
+
 scene.customRender.append(customPaint)
+scene2.customRender.append(customPaint)
 
 def importResource():
     qfd = QFileDialog()
@@ -147,16 +159,16 @@ def importResource():
             UvPlane.setValue('w',data['rgb_width'])
             UvPlane.setValue('h',data['rgb_height'])
 
-            UvPlane2.setValue('cam_pose',np.array([data['calibrateMat'][0][3],data['calibrateMat'][1][3],data['calibrateMat'][2][3]]))
-            UvPlane2.setValue('inverTransMat',np.linalg.inv(
+            depthMapUniform.setValue('cam_pose',np.array([data['calibrateMat'][0][3],data['calibrateMat'][1][3],data['calibrateMat'][2][3]]))
+            depthMapUniform.setValue('inverTransMat',np.linalg.inv(
                 np.array(data['calibrateMat'])
             ))
-            UvPlane2.setValue('ppx',data['rgb_cx'])
-            UvPlane2.setValue('ppy',data['rgb_cy'])
-            UvPlane2.setValue('fx',data['rgb_fx'])
-            UvPlane2.setValue('fy',data['rgb_fy'])
-            UvPlane2.setValue('w',data['rgb_width'])
-            UvPlane2.setValue('h',data['rgb_height'])
+            depthMapUniform.setValue('ppx',data['rgb_cx'])
+            depthMapUniform.setValue('ppy',data['rgb_cy'])
+            depthMapUniform.setValue('fx',data['rgb_fx'])
+            depthMapUniform.setValue('fy',data['rgb_fy'])
+            depthMapUniform.setValue('w',data['rgb_width'])
+            depthMapUniform.setValue('h',data['rgb_height'])
 
             uniformModel.setValue('cam_pose',np.array([data['calibrateMat'][0][3],data['calibrateMat'][1][3],data['calibrateMat'][2][3]]))
             uniformModel.setValue('inverTransMat',np.linalg.inv(
@@ -183,7 +195,7 @@ def importResource():
 
             uniformModel.setValue('projectTex',newTex)
             UvPlane.setValue('projectTex',newTex)
-            UvPlane2.setValue('projectTex',newTex)
+            depthMapUniform.setValue('projectTex',newTex)
 
         elif '.png' in filename:
 
