@@ -63,6 +63,7 @@ class QtGLScene():
         self.openGLWidget.doneCurrent()
 
     def paintGL(self):
+        glClearColor(0.0, 0.0, 0.0, 0.0)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
         # 設置視口
@@ -71,11 +72,11 @@ class QtGLScene():
         glMatrixMode(GL_MODELVIEW)
         glLoadIdentity()
 
-        for customRender in self.customRender:
-            customRender()
-
         for mesh in self.meshes:
             mesh.draw()
+
+        for customRender in self.customRender:
+            customRender()      
 
     def resizeGL(self, width, height):
         size = self.openGLWidget.size()

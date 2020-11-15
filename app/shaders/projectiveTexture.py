@@ -19,6 +19,7 @@ fragment_shader =\
 #version 120
 
 uniform mat4 normalizeMat;
+uniform sampler2D depthMap;
 uniform sampler2D projectTex;
 uniform sampler2D tex1;
 varying vec2 tex_coord;
@@ -36,11 +37,12 @@ uniform float fy;
 uniform float w;
 uniform float h;
 
-vec3 getProjectedUv(mat4 inverTransMat,vec3 position){    
-    vec3 unTrans = (inverTransMat* normalizeMat * vec4(position.xyz,1.0)).xyz;
+vec3 getProjectedUv(mat4 inverTransMat,vec3 position){ 
+    vec3 unTransNormalized = (inverTransMat* normalizeMat * vec4(position.xyz,1.0)).xyz;
+    vec3 unTrans = (inverTransMat* vec4(position.xyz,1.0)).xyz;
     float u = (unTrans.x/unTrans.z*fx+ppx)/w;
     float v = (unTrans.y/unTrans.z*fy+ppy)/h;
-    return vec3(u,v,unTrans.z);
+    return vec3(u,v,unTransNormalized.z);
 }
 
 void main() {
@@ -48,16 +50,13 @@ void main() {
     vec3 camDirection = position - cam_pose;
     vec3 uv = getProjectedUv(inverTransMat,position);
 
-    gl_FragColor = vec4(uv.z,uv.z,uv.z,uv.z>=1.0? 0.0:1.0);
-
-    /*
     if (dot(camDirection, normal)>0){
         gl_FragColor = vec4(0.0,0.0,0.0,0.0);
     }
     else{
         vec3 uv = getProjectedUv(inverTransMat,position);
-        gl_FragColor = texture2D(projectTex,uv.xy);
+        gl_FragColor = texture2D(depthMap,uv.xy);
     }
-    */
+
 }
 '''

@@ -12,6 +12,7 @@ from opengl.Material.ShaderMaterial import *
 from opengl.Texture import *
 from opengl.Mesh import *
 from opengl.Uniform import *
+from opengl.FrameBuffer import *
 
 from Args.medias import build_argparser
 args = build_argparser().parse_args()
@@ -39,42 +40,14 @@ timer.start(1)
 uniformModel = Uniform()
 tex1 = Texture(np.zeros((2,2)))
 uniformModel.addTexture('tex1',tex1)
+depthMap = FrameBuffer(scene.size)
+uniformModel.addTexture('depthMap',depthMap)
 uniformModel.addTexture('projectTex',tex1)
 uniformModel.addMat4('normalizeMat', np.identity(4))
 
 # camera pose test
-uniformModel.addvec3('cam_pose',np.array([
-    0.2259568470999498,0.2199078677298788,0.6171844022035089
-]))
-uniformModel.addMat4('inverTransMat',np.linalg.inv(
-    np.array([
-        [
-            -0.9851929601511762,
-            -0.0784819093900398,
-            -0.1862612434970548,
-            0.2259568470999498
-        ],
-        [
-            -0.0627784000287267,
-            0.999779405221067,
-            -0.089206743285779,
-            0.2199078677298788
-        ],
-        [
-            0.0861751728916132,
-            -0.08368264341086802,
-            -0.9985133371322,
-            0.6171844022035089
-        ],
-        [
-            0.0,
-            0.0,
-            0.0,
-            1.0
-        ]
-    ])
-))
-
+uniformModel.addvec3('cam_pose',np.array([0,0,0]))
+uniformModel.addMat4('inverTransMat',np.identity(4))
 uniformModel.addFloat('ppx',953.74)
 uniformModel.addFloat('ppy',560.38)
 uniformModel.addFloat('fx',1387.60)
@@ -100,38 +73,8 @@ UvPlane.addTexture('tex1',tex1)
 UvPlane.addTexture('projectTex',tex1)
 
 # camera pose test
-UvPlane.addvec3('cam_pose',np.array([
-    0.2259568470999498,0.2199078677298788,0.6171844022035089
-]))
-UvPlane.addMat4('inverTransMat',np.linalg.inv(
-    np.array([
-        [
-            -0.9851929601511762,
-            -0.0784819093900398,
-            -0.1862612434970548,
-            0.2259568470999498
-        ],
-        [
-            -0.0627784000287267,
-            0.999779405221067,
-            -0.089206743285779,
-            0.2199078677298788
-        ],
-        [
-            0.0861751728916132,
-            -0.08368264341086802,
-            -0.9985133371322,
-            0.6171844022035089
-        ],
-        [
-            0.0,
-            0.0,
-            0.0,
-            1.0
-        ]
-    ])
-))
-
+UvPlane.addvec3('cam_pose',np.array([0,0,0]))
+UvPlane.addMat4('inverTransMat',np.identity(4))
 UvPlane.addFloat('ppx',953.74)
 UvPlane.addFloat('ppy',560.38)
 UvPlane.addFloat('fx',1387.60)
@@ -146,6 +89,41 @@ matUvPlane = ShaderMaterial(uvTextureShader.vertex_shader,
 uvPlane = Mesh(matUvPlane, geoModel)
 uvPlane.wireframe = False
 scene2.add(uvPlane)
+
+from opengl.Geometry.DepthArrGeometry import *
+geoPonints = DepthArrGeometry(np.zeros(10000))
+
+# texture uv plane
+UvPlane2 = Uniform()
+UvPlane2.addMat4('normalizeMat', np.identity(4))
+UvPlane2.addTexture('tex1',tex1)
+UvPlane2.addTexture('projectTex',tex1)
+
+# camera pose test
+UvPlane2.addvec3('cam_pose',np.array([0,0,0]))
+UvPlane2.addMat4('inverTransMat',np.identity(4))
+UvPlane2.addFloat('ppx',953.74)
+UvPlane2.addFloat('ppy',560.38)
+UvPlane2.addFloat('fx',1387.60)
+UvPlane2.addFloat('fy',1388.31)
+UvPlane2.addFloat('w',1920)
+UvPlane2.addFloat('h',1080)
+
+import shaders.projectDepthMap as projectDepthMap
+matUvPlane2 = ShaderMaterial(projectDepthMap.vertex_shader,
+                     projectDepthMap.fragment_shader,
+                     UvPlane2)
+uvPlane2 = Mesh(matUvPlane2, geoModel)
+
+scene.startDraw()
+uvPlane2.init()
+scene.endDraw()
+def customPaint():
+    depthMap.updateResolution(scene.size)
+    depthMap.startDraw()
+    uvPlane2.draw()
+    depthMap.endDraw()
+scene.customRender.append(customPaint)
 
 def importResource():
     qfd = QFileDialog()
@@ -162,18 +140,28 @@ def importResource():
             UvPlane.setValue('inverTransMat',np.linalg.inv(
                 np.array(data['calibrateMat'])
             ))
-
             UvPlane.setValue('ppx',data['rgb_cx'])
             UvPlane.setValue('ppy',data['rgb_cy'])
             UvPlane.setValue('fx',data['rgb_fx'])
             UvPlane.setValue('fy',data['rgb_fy'])
             UvPlane.setValue('w',data['rgb_width'])
             UvPlane.setValue('h',data['rgb_height'])
+
+            UvPlane2.setValue('cam_pose',np.array([data['calibrateMat'][0][3],data['calibrateMat'][1][3],data['calibrateMat'][2][3]]))
+            UvPlane2.setValue('inverTransMat',np.linalg.inv(
+                np.array(data['calibrateMat'])
+            ))
+            UvPlane2.setValue('ppx',data['rgb_cx'])
+            UvPlane2.setValue('ppy',data['rgb_cy'])
+            UvPlane2.setValue('fx',data['rgb_fx'])
+            UvPlane2.setValue('fy',data['rgb_fy'])
+            UvPlane2.setValue('w',data['rgb_width'])
+            UvPlane2.setValue('h',data['rgb_height'])
+
             uniformModel.setValue('cam_pose',np.array([data['calibrateMat'][0][3],data['calibrateMat'][1][3],data['calibrateMat'][2][3]]))
             uniformModel.setValue('inverTransMat',np.linalg.inv(
                 np.array(data['calibrateMat'])
             ))
-
             uniformModel.setValue('ppx',data['rgb_cx'])
             uniformModel.setValue('ppy',data['rgb_cy'])
             uniformModel.setValue('fx',data['rgb_fx'])
@@ -195,6 +183,8 @@ def importResource():
 
             uniformModel.setValue('projectTex',newTex)
             UvPlane.setValue('projectTex',newTex)
+            UvPlane2.setValue('projectTex',newTex)
+
         elif '.png' in filename:
 
             img = cv2.imread(filename)
@@ -222,9 +212,6 @@ def importResource():
                 UvPlane.setValue('normalizeMat',geoModel.getNormalizeMat())       
             
             scene.endDraw()
-
-
-
 
 ui.actionimport.triggered.connect(importResource)
 

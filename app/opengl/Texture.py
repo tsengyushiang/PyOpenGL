@@ -52,6 +52,7 @@ class Texture:
         # copy the texture into the current texture ID
         glTexImage2D(GL_TEXTURE_2D, 0, 3, self.ix, self.iy, 0,
                      self.type, GL_UNSIGNED_BYTE, self.image)
+        glBindTexture(GL_TEXTURE_2D, 0)
 
     def update(self, input):
         self.image = np.flipud(input)

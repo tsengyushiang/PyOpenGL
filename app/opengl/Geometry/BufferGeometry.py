@@ -104,3 +104,4 @@ class BufferGeometry:
 
         glBindVertexArray(self.vao)    
         glDrawArrays(GL_TRIANGLES, 0 ,len(self.indices)*3)
+        glBindVertexArray(0)
