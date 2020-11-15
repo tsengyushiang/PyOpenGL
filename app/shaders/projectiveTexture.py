@@ -48,15 +48,18 @@ vec3 getProjectedUv(mat4 inverTransMat,vec3 position){
 void main() {
 
     vec3 camDirection = position - cam_pose;
-    vec3 uv = getProjectedUv(inverTransMat,position);
+    vec3 uv = getProjectedUv(inverTransMat,position);    
+    
+    if (dot(camDirection, normal)<0){       
 
-    if (dot(camDirection, normal)>0){
-        gl_FragColor = vec4(0.0,0.0,0.0,0.0);
+        if (uv.z - texture2D(depthMap,uv.xy).x<1e-2){
+            gl_FragColor = texture2D(projectTex,uv.xy);
+        }else{
+            gl_FragColor = vec4(0.0,0.0,0.0,0.0);
+        }
     }
     else{
-        vec3 uv = getProjectedUv(inverTransMat,position);
-        gl_FragColor = texture2D(depthMap,uv.xy);
+        gl_FragColor = vec4(0.0,0.0,0.0,0.0);
     }
-
 }
 '''
