@@ -559,6 +559,10 @@ class App():
 
             config = device.getConfig()
             config['calibrateMat'] = mat4
+            config['camera2wolrd'] = mat4
+            config['world2camera'] = np.linalg.inv(mat4)
+            config['verify'] = config['camera2wolrd']@config['world2camera']
+
             config['positiveBoundaryCorner'] = self.pos
             config['negativeBoundaryCorner'] = self.neg
 
