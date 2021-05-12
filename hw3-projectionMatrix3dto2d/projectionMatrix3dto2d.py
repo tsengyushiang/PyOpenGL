@@ -91,4 +91,4 @@ RT = np.linalg.inv(intrinsic)@P
 normalizedRT = RT / np.linalg.norm(RT[:,0])
 
 cameraSpaceTargetPoint = normalizedRT@targetPoint
-print('\ntargetPoint distance to camera : \n\n', np.linalg.norm(cameraSpaceTargetPoint))
+print('\nDistance vector : \n', cameraSpaceTargetPoint, '\nDistance :\n', np.linalg.norm(cameraSpaceTargetPoint))
